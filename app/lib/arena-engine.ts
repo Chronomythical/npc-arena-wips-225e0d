@@ -6,7 +6,8 @@ import { INTROS, BOSS_INTROS, fusionIntro, INTRO_LEN, INTRO_ARRIVED, type IntroB
 import { LOOKS, setLookTint, drawFx, drawSpark, drawShotLook, drawBeamLook, drawEruptionLook, drawZoneLook, drawRushLook, drawAnnihilation, eruptionColors, type Fx, type PShape } from "./move-looks";
 import { drawBossDesign, type BossAct } from "./boss-designs";
 import { drawQuestDesign, type QuestAct } from "./quest-designs";
-import { FORMS, PERFECTED_FLAME, FORM_SHOUT, type Form, type FormKind } from "./forms";
+import { FORMS, PERFECTED_FLAME, formShout, type Form, type FormKind } from "./forms";
+import { BOSS_PHASES } from "./bosses";
 
 export const W = 960;
 export const H = 600;
@@ -254,10 +255,17 @@ const ROAR_POSE: Pose = { ...RAGE_POSE, t: -0.3, ...ANIMS.raise.strike };
 const rageOf = (f?: Fighter | null) => f?.form ?? null;
 /** Nightmare Mode can't be stunned or frozen: those effects never take hold while it is on. */
 const shrugsOff = (f: Fighter, st?: StatusEffect) => (st === "stun" || st === "freeze") && rageOf(f)?.kind === "nightmare";
-/** The form a fighter breaks into now, if any. Forms only belong to the pure fighters, not to a hybrid or a boss carrying their power. */
+/** The form a fighter breaks into now, if any. Forms only belong to the pure fighters, not to a hybrid or a boss carrying their power.
+ * A Story boss has its own phases instead (BOSS_PHASES in bosses.ts), taken one at a time as its health runs down. */
 function nextForm(f: Fighter): Form | null {
-  if (f.def.parents || f.def.boss) return null;
+  if (f.def.parents) return null;
   const share = f.hp / f.maxHp;
+  if (f.def.boss) {
+    const phases = BOSS_PHASES[f.def.boss];
+    if (!phases) return null;
+    const next = phases[f.form ? phases.indexOf(f.form) + 1 : 0];
+    return next && share <= next.at ? next : null;
+  }
   if (!f.form) { const fm = FORMS[f.def.id]; return fm && share <= fm.at ? fm : null; }
   if (f.form === FORMS.pyro && share <= PERFECTED_FLAME.at) return PERFECTED_FLAME;
   return null;
@@ -271,6 +279,7 @@ const CUT_POSES: Record<FormKind, [Pose, Pose]> = {
   awakened: [{ ...RAGE_POSE, t: 0.35, aF1: 0.2, aB1: -0.2 }, { ...STANCE, t: -0.25, aF1: 2.4, aF2: 2.6, aB1: -2.4, aB2: -2.6, lF1: 0.3, lB1: -0.3 }],
   mastery: [{ ...STANCE, t: 0.05, aF1: 1.1, aF2: 2.2, aB1: 1.0, aB2: 2.3, lF1: 0.35, lF2: 0.1, lB1: -0.35, lB2: -0.1 }, { ...STANCE, t: 0.1, ...ANIMS.thrust.strike, lF1: 0.6, lF2: 0.1, lB1: -0.6, lB2: -0.3 }],
   nightmare: [{ ...RAGE_POSE, t: 0.7, aF1: 0.3, aF2: 0.1, aB1: 0.2, aB2: 0.05, lF1: 0.9, lF2: -0.3, lB1: -0.4, lB2: -0.9 }, { ...ROAR_POSE, t: -0.45, aF1: 2.2, aF2: 1.9, aB1: -2.2, aB2: -1.9 }],
+  phase: [{ ...RAGE_POSE, t: 0.5, aF1: 0.6, aF2: 0.3, aB1: -0.6, aB2: -0.3, lF1: 0.7, lF2: -0.2, lB1: -0.6, lB2: -0.5 }, { ...ROAR_POSE, t: -0.4, aF1: 2.5, aF2: 2.2, aB1: -2.5, aB2: -2.2, lF1: 0.55, lB1: -0.55 }],
   mystic: [{ ...STANCE, t: 0, aF1: 0.9, aF2: 1.7, aB1: -0.9, aB2: -1.7, lF1: 0.9, lF2: -1.2, lB1: -0.9, lB2: 1.2 }, { ...STANCE, t: -0.15, aF1: 1.9, aF2: 2.2, aB1: -1.9, aB2: -2.2, lF1: 0.15, lF2: 0.1, lB1: -0.15, lB2: -0.1 }],
 };
 /** Whose rage colours new particles and effects take while a fighter acts. */
@@ -1518,14 +1527,17 @@ function startForm(g: Game, f: Fighter, fm: Form) {
   f.clashAir = false;
   f.hurtT = 0;
   f.vx = 0;
-  // breaking into Nightmare Mode throws off any stun or freeze already on the fighter
-  if (fm.kind === "nightmare") { f.status.stun = 0; f.status.freeze = 0; }
+  // breaking into Nightmare Mode or a boss's next phase throws off any stun or freeze already on the fighter
+  if (fm.kind === "nightmare" || fm.kind === "phase") { f.status.stun = 0; f.status.freeze = 0; }
   // a crowded free for all gets a shorter cutscene so the fight keeps moving
   const crowd = g.fighters.filter((o) => o.alive).length > 4;
-  g.cut = { key: f.key, t: 0, max: crowd ? 1.6 : fm.kind === "perfected" || fm.kind === "nightmare" ? CUT_TIME + 0.6 : CUT_TIME };
+  g.cut = { key: f.key, t: 0, max: crowd ? 1.6 : fm.kind === "perfected" || fm.kind === "nightmare" || fm.kind === "phase" ? CUT_TIME + 0.6 : CUT_TIME };
   g.hitstop = 0;
-  sfx(g, { k: "rage", power: f.def.id });
+  sfx(g, { k: "rage", power: f.def.id, step: fm.step });
 }
+
+/** The name over a fighter's health: a boss past its first phase says which one it is in. */
+const hudName = (f: Fighter) => (f.form?.kind === "phase" && f.alive ? `${f.def.name}  PHASE ${f.form.step}` : f.def.name);
 
 /** The cutscene plays: only the raging fighter and the effects move. */
 function stepCut(g: Game, dt: number) {
@@ -1547,7 +1559,7 @@ function stepCut(g: Game, dt: number) {
     if (Math.random() < dt * 30) emit(g, f.def.id, f.x + rand(-20, 20) * s, f.y - rand(0, 110) * s, 1, 90);
     if (k > 0.72 && !f.ghosts.length) f.ghosts.push({ x: f.x, y: f.y, pose: { ...f.pose }, face: f.facing, life: 0.4 });
     const [gather, loose] = CUT_POSES[rg.kind];
-    const quiver = rg.kind === "rage" || rg.kind === "perfected" || rg.kind === "nightmare" ? 0.03 : 0.012;
+    const quiver = rg.kind === "rage" || rg.kind === "perfected" || rg.kind === "nightmare" || rg.kind === "phase" ? 0.03 : 0.012;
     smoothPose(f, k < 0.62 ? { ...gather, t: gather.t + Math.sin(cut.t * 30) * quiver } : loose, dt, k < 0.62 ? 10 : 26);
     paint = null;
   }
@@ -3017,6 +3029,7 @@ function drawFighterBody(ctx: CanvasRenderingContext2D, g: Game, f: Fighter, o: 
   if (f.jugg) drawWings(ctx, g, f, shoulder, face);
   if (rg) drawRageAura(ctx, g, f, rg, hip, head);
   const bt = g.t + (g.intro?.t ?? 0) + f.key;
+  const bossPhase = rg?.kind === "phase" ? rg.step ?? 1 : 1;
   const bossPts = { hip, neck, shoulder, head, kF, fF, kB, fB, eF, hF, eB, hB };
   let bossAct: BossAct | undefined;
   if (f.def.boss && f.act && f.alive) {
@@ -3026,7 +3039,7 @@ function drawFighterBody(ctx: CanvasRenderingContext2D, g: Game, f: Fighter, o: 
     const u = phase === "wind" ? at / Math.max(0.01, m.wind) : phase === "strike" ? (at - m.wind) / strikeLen : (at - m.wind - strikeLen) / Math.max(0.1, m.rec * 0.5);
     bossAct = { kind: m.kind, id: m.id, phase, u: clamp(u, 0, 1) };
   }
-  if (f.def.boss && !o.solid) drawBossDesign(ctx, f.def.boss, "back", bossPts, s, face, bt, f.alive, f.vx, bossAct);
+  if (f.def.boss && !o.solid) drawBossDesign(ctx, f.def.boss, "back", bossPts, s, face, bt, f.alive, f.vx, bossAct, bossPhase);
   // a quest fighter (not a hybrid carrying its power) wears its own design
   const quest = isQuester(f.def.id) && !f.def.parents && !f.def.boss && !o.solid;
   let questAct: QuestAct | undefined;
@@ -3121,7 +3134,7 @@ function drawFighterBody(ctx: CanvasRenderingContext2D, g: Game, f: Fighter, o: 
     ctx.arc(ex + face * 1.3 * s, ey + 0.5 * s, 2 * s, 0, Math.PI * 2);
     ctx.fill();
   }
-  if (f.def.boss && !o.solid) drawBossDesign(ctx, f.def.boss, "front", bossPts, s, face, bt, f.alive, f.vx, bossAct);
+  if (f.def.boss && !o.solid) drawBossDesign(ctx, f.def.boss, "front", bossPts, s, face, bt, f.alive, f.vx, bossAct, bossPhase);
   if (quest) drawQuestDesign(ctx, f.def.id, "front", bossPts, s, face, bt, f.alive, questAct, questPaint, f.vx);
   ctx.globalAlpha = 1;
 
@@ -3160,7 +3173,27 @@ function drawRageAura(ctx: CanvasRenderingContext2D, g: Game, f: Fighter, rg: Ra
   ctx.beginPath();
   ctx.arc(cx, cy, 70 * s, 0, Math.PI * 2);
   ctx.fill();
-  if (f.def.id === "pyro") {
+  if (rg.kind === "phase") {
+    // a boss phase: one ring of power per phase reached, turning at the feet, with sparks rising off it
+    const n = (rg.step ?? 2) - 1;
+    ctx.lineCap = "round";
+    for (let i = 0; i < n; i++) {
+      ctx.strokeStyle = shade(i % 2 ? rg.a : rg.b, 0, 0.75);
+      ctx.lineWidth = 2.6 * s;
+      const a0 = t * (i % 2 ? -1.8 : 1.4) + i;
+      ctx.beginPath();
+      ctx.ellipse(f.x, f.y - 2 * s, (44 + i * 14) * s, (9 + i * 3) * s, 0, a0, a0 + 4.4);
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 3 + n * 2; i++) {
+      const u = (t * 0.8 + i / (3 + n * 2)) % 1;
+      ctx.fillStyle = shade(i % 2 ? rg.a : rg.b, 0, 0.85 * (1 - u));
+      ctx.beginPath();
+      ctx.arc(f.x + Math.sin(i * 2.7 + t * 2) * (30 + n * 8) * s, f.y - u * (110 + n * 30) * s, (2 + (i % 3)) * s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (f.def.id === "pyro") {
     // tongues of blue fire licking up the body
     ctx.globalCompositeOperation = "lighter";
     for (let i = 0; i < 7; i++) {
@@ -3785,7 +3818,13 @@ function drawHud(ctx: CanvasRenderingContext2D, g: Game) {
       ctx.fillRect(left ? x0 + bw - cur : x0, top, cur, bh);
       ctx.fillStyle = "hsl(0 0% 100% / 0.35)";
       ctx.fillRect(x0, top + 3, bw, 4);
-      outlinedText(ctx, f.def.name, left ? x0 : x0 + bw, top + bh + 22, 22, "white", left ? "left" : "right");
+      // a boss's bar is notched where each of its phases begins
+      const phases = f.def.boss ? BOSS_PHASES[f.def.boss] : undefined;
+      if (phases) {
+        ctx.fillStyle = INK;
+        for (const ph of phases) ctx.fillRect((left ? x0 + bw - bw * ph.at : x0 + bw * ph.at) - 1.5, top, 3, bh);
+      }
+      outlinedText(ctx, hudName(f), left ? x0 : x0 + bw, top + bh + 22, 22, "white", left ? "left" : "right");
       outlinedText(ctx, `${Math.ceil(Math.max(0, f.hp))}`, left ? x0 + bw - 10 : x0 + 10, top + bh / 2 + 1, 16, "white", left ? "right" : "left");
     });
     ctx.fillStyle = "hsl(46 100% 62%)";
@@ -3817,7 +3856,7 @@ function drawHeadBars(ctx: CanvasRenderingContext2D, g: Game) {
       ctx.fillRect(f.x - bw / 2, y, (bw * f.hpTrail) / f.maxHp, 5);
       ctx.fillStyle = f.def.color;
       ctx.fillRect(f.x - bw / 2, y, (bw * Math.max(0, f.hp)) / f.maxHp, 5);
-      outlinedText(ctx, f.def.name, f.x, y - 12, 15, tc ?? "white");
+      outlinedText(ctx, hudName(f), f.x, y - 12, 15, tc ?? "white");
     }
   }
 }
@@ -4128,6 +4167,32 @@ function drawCutBackdrop(ctx: CanvasRenderingContext2D, f: Fighter, k: number, t
     ctx.beginPath();
     ctx.arc(c.x, c.y, 70 + 30 * Math.sin(t * 6), 0, Math.PI * 2);
     ctx.stroke();
+  } else if (rg.kind === "phase") {
+    // a boss phase: the ground shakes apart in rings, one more each phase, and the arena darkens a step further
+    const n = (rg.step ?? 2) - 1;
+    ctx.fillStyle = `hsl(0 0% 0% / ${0.15 * n * Math.min(1, k * 2)})`;
+    ctx.fillRect(-W, -H, W * 3, H * 3);
+    ctx.lineWidth = 4;
+    for (let i = 0; i < n + 2; i++) {
+      const u = (t * 0.7 + i / (n + 2)) % 1;
+      ctx.strokeStyle = shade(i % 2 ? rg.a : rg.b, 0, 0.8 * (1 - u));
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, 60 + u * 520, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 4 + n * 2; i++) {
+      const an = Math.PI + (i / (3 + n * 2)) * Math.PI;
+      const reach = 60 + 480 * Math.min(1, k * 1.5);
+      ctx.strokeStyle = shade(i % 2 ? rg.b : rg.glow, 0, 0.85);
+      ctx.beginPath();
+      ctx.moveTo(c.x, f.y);
+      for (let j = 1; j <= 5; j++) {
+        const d = (reach * j) / 5;
+        ctx.lineTo(c.x + Math.cos(an + Math.sin(i * 4 + j) * 0.2) * d, f.y + Math.abs(Math.sin(an)) * d * 0.15 + Math.sin(i + j * 2) * 8);
+      }
+      ctx.stroke();
+    }
   } else if (rg.kind === "perfected") {
     // red fire on one side, blue on the other, meeting in them
     const side = ctx.createLinearGradient(c.x - 420, 0, c.x + 420, 0);
@@ -4165,7 +4230,7 @@ function drawCutTitles(ctx: CanvasRenderingContext2D, f: Fighter, k: number) {
   ctx.globalAlpha = leave;
   const e1 = enter(0.08), e2 = enter(0.2), e3 = enter(0.62);
   outlinedText(ctx, f.def.name.toUpperCase(), x + slide(e1), H * 0.3, 56, "white", align);
-  outlinedText(ctx, FORM_SHOUT[rg.kind], x + slide(e2), H * 0.3 + 58, 44, rg.kind === "perfected" ? rg.a : rg.glow, align);
+  outlinedText(ctx, formShout(rg), x + slide(e2), H * 0.3 + 58, 44, rg.kind === "perfected" ? rg.a : rg.glow, align);
   if (e3 > 0) {
     ctx.globalAlpha = leave * e3;
     outlinedText(ctx, rg.title, x, H * 0.3 + 104, 26 + 6 * (1 - e3), f.def.id === "electro" || rg.kind === "mastery" ? "white" : rg.b, align);

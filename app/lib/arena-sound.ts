@@ -10,7 +10,7 @@ export type Sfx =
   | { k: "clash" }
   | { k: "m1clash" }
   | { k: "ko" }
-  | { k: "rage"; power: Power }
+  | { k: "rage"; power: Power; step?: number }
   | { k: "intro"; power: Power }
   | { k: "ready" }
   | { k: "fight" }
@@ -465,6 +465,13 @@ export class ArenaSound {
           s.noise(200, 3800, 1.8, 0.4, { type: "bandpass", q: 1.2, attack: 1 });
           s.gain = 0.9;
           CAST[e.power](s, 0.7, 1.4, 0);
+          // a boss's next phase: a deep bell tolls once per phase reached, each one lower
+          for (let i = 0; i < (e.step ?? 1) - 1; i++) {
+            const base = 98 - i * 14;
+            s.gain = 0.7;
+            [1, 2.76, 5.4].forEach((r, j) => s.tone(base * r, base * r * 0.985, 1.6 - j * 0.4, 0.2 / (j + 1), { type: "sine", delay: 0.35 + i * 0.45 }));
+            s.noise(120, 60, 0.4, 0.3, { type: "lowpass", delay: 0.35 + i * 0.45 });
+          }
           s.gain = 1;
           break;
         case "intro": {

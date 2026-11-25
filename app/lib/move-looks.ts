@@ -203,6 +203,35 @@ const FORM_LOOKS: Record<string, Look> = {
   // Perfected Flame: red and blue fire at once
   "twin-dragon-flame": F("fireball", "hsl(2 95% 54%)", "hsl(214 100% 64%)", "ember", true, -140, "flare"),
   "crimson-azure-nova": F("sun-flare", "hsl(2 95% 54%)", "hsl(214 100% 64%)", "ember", true, -200, "starburst"),
+  // Boss phases (BOSS_PHASES in bosses.ts): each grows out of one of the boss's own moves
+  // Nullshade
+  "twin-orbit": F("pair-burst", "hsl(0 0% 100%)", "hsl(186 100% 72%)", "ring", true, 0, "implode"),
+  "antimatter-grasp": F("antimatter-lance", "hsl(268 70% 18%)", "hsl(186 100% 78%)", "spark", true, 0, "implode"),
+  "chain-annihilation": F("annihilation", "hsl(186 100% 62%)", "hsl(0 0% 100%)", "spark", true, -80, "starburst"),
+  "erasure-beam": F("antimatter-lance", "hsl(0 0% 100%)", "hsl(186 100% 70%)", "ring", true, 0, "implode"),
+  "absolute-null": F("null-field", "hsl(268 80% 5%)", "hsl(186 100% 70%)", "ring", true, 0),
+  "big-crunch": F("zero-point", "hsl(268 80% 8%)", "hsl(186 100% 76%)", "spark", true, 0, "implode"),
+  // Maelstrom
+  "undertow": F("tidal-wall", "hsl(212 85% 34%)", "hsl(186 100% 82%)", "drop", false, 800, "ripple"),
+  "harpoon-tide": F("trident-rake", "hsl(200 90% 50%)", "hsl(186 100% 86%)", "drop", false, 600, "splash"),
+  "lightning-trident": F("thunderhead", "hsl(54 100% 70%)", "hsl(0 0% 100%)", "bolt", true, 0, "fork"),
+  "squall-line": F("thunderhead", "hsl(220 35% 34%)", "hsl(54 100% 76%)", "bolt", true, 0, "fork"),
+  "leviathan-maw": F("riptide", "hsl(205 90% 18%)", "hsl(170 100% 70%)", "drop", false, 600, "bite"),
+  "drowned-world": F("eye-of-the-storm", "hsl(205 90% 16%)", "hsl(170 100% 66%)", "bubble", false, -60),
+  // Magmaw
+  "magma-geyser": F("fault-line", "hsl(16 100% 48%)", "hsl(48 100% 68%)", "ember", true, -320, "flare"),
+  "cinder-spit": F("lava-bombs", "hsl(14 50% 22%)", "hsl(30 100% 60%)", "ember", true, -100, "crater"),
+  "ash-storm": F("magma-lake", "hsl(20 10% 24%)", "hsl(26 100% 58%)", "smoke", false, -60),
+  "pyroclastic-flow": F("tidal-wall", "hsl(16 30% 20%)", "hsl(30 100% 58%)", "smoke", false, -40, "crater"),
+  "supervolcano": F("volcanic-roar", "hsl(10 100% 46%)", "hsl(50 100% 72%)", "ember", true, -300, "flare"),
+  "caldera-crush": F("volcanic-roar", "hsl(14 100% 44%)", "hsl(48 100% 76%)", "chunk", false, 700, "crater"),
+  // Everwinter
+  "glacier-fang": F("fault-line", "hsl(210 60% 40%)", "hsl(196 100% 90%)", "shard", false, 450, "shatter"),
+  "frozen-second": F("rime-step", "hsl(210 60% 56%)", "hsl(44 95% 78%)", "flake", false, 80, "clock"),
+  "clock-hands": F("hourglass-icicles", "hsl(42 80% 56%)", "hsl(200 90% 92%)", "glyph", true, 0, "clock"),
+  "rewound-blizzard": F("hourglass-icicles", "hsl(200 80% 82%)", "hsl(44 95% 80%)", "flake", false, 300, "shatter"),
+  "eternal-stop": F("time-stop", "hsl(200 90% 80%)", "hsl(0 0% 100%)", "glyph", true, 0, "clock"),
+  "absolute-winter": F("glacial-age", "hsl(200 80% 88%)", "hsl(0 0% 100%)", "flake", false, 20),
 };
 // ---------- quest fighters ----------
 // Parallax (space), Hexizon (indie games), Halflife (gamma), Redline (speed) and Liminal (portals and matter). Their signature moves have hand-drawn looks of their own

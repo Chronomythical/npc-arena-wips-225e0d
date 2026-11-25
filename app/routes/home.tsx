@@ -273,7 +273,7 @@ export default function Home() {
     // every fight played to the end counts toward quests
     recordFight({
       kos: g.fighters.filter((f) => !f.alive).length,
-      forms: g.fighters.filter((f) => f.form).length,
+      forms: g.fighters.filter((f) => f.form && f.form.kind !== "phase").length,
       boss: mode === "story" && stageRef.current?.i === STAGES_PER_CHAPTER - 1 && g.winnerTeam === 0,
     });
     matchRef.current = null;

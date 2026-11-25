@@ -5,7 +5,7 @@
 
 import type { Move, Power } from "./fighters";
 
-export type FormKind = "rage" | "perfected" | "awakened" | "mastery" | "mystic" | "nightmare";
+export type FormKind = "rage" | "perfected" | "awakened" | "mastery" | "mystic" | "nightmare" | "phase";
 
 export type Form = {
   power: Power;
@@ -27,6 +27,8 @@ export type Form = {
   regen?: number; dodge?: number; drain?: number; guard?: number;
   /** The new moves it fights with on top of its own. */
   moves: Move[];
+  /** A Story boss's phase number (2, 3 or 4); see BOSS_PHASES in bosses.ts. */
+  step?: number;
 };
 
 export const FORM_NAME: Record<FormKind, string> = {
@@ -36,6 +38,7 @@ export const FORM_NAME: Record<FormKind, string> = {
   mastery: "Mastery Mode",
   mystic: "Mystic Mode",
   nightmare: "Nightmare Mode",
+  phase: "Boss Phase",
 };
 
 /** The big title the cutscene shouts. */
@@ -46,7 +49,11 @@ export const FORM_SHOUT: Record<FormKind, string> = {
   mastery: "MASTERY MODE",
   mystic: "MYSTIC MODE",
   nightmare: "NIGHTMARE MODE",
+  phase: "NEXT PHASE",
 };
+
+/** The big title a form's cutscene shouts: a boss phase names its number. */
+export const formShout = (f: Form) => (f.kind === "phase" && f.step ? `PHASE ${f.step}` : FORM_SHOUT[f.kind]);
 
 const M = (m: Omit<Move, "wind" | "act" | "rec"> & Partial<Pick<Move, "wind" | "act" | "rec">>): Move => ({
   wind: 0.18,

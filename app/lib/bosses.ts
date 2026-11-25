@@ -1,7 +1,8 @@
 // The Story bosses. Each is its own fighter, not a fusion: its own moves (several with mechanics no
 // roster fighter has), its own body design drawn by the engine, and its own colours. `id` is only the
 // voice and entrance it borrows from the roster.
-import type { FighterDef, Move } from "./fighters";
+import type { BossDesign, FighterDef, Move } from "./fighters";
+import type { Form } from "./forms";
 
 export type BossId = "nullshade" | "maelstrom" | "magmaw" | "everwinter" | "riftmaker" | "hollowking" | "blacksun";
 
@@ -111,4 +112,132 @@ export const BOSSES: Record<BossId, FighterDef> = {
       M({ id: "total-eclipse", name: "Total Eclipse", kind: "burst", anim: "raise", range: 2000, cd: 14, dmg: 6, eclipse: true, status: "blind", statusDur: 4, wind: 0.55, rec: 0.3 }),
     ],
   },
+};
+
+// ---------- Boss phases ----------
+// Each boss breaks into a 2nd, 3rd and 4th phase as its health runs down (75%, 50%, 25%). A phase is a form
+// (forms.ts, kind "phase"): the fight pauses for its cutscene, the boss is recoloured and stronger, and 2 new
+// moves join the ones it already has, so by its 4th phase a boss fights with 12. Its look grows with each
+// phase (drawBossPhase in boss-designs.ts). Chapters 5 to 7 are still to come.
+const P2 = { kind: "phase" as const, step: 2, at: 0.75, dmg: 1.12, kb: 1.08, cd: 0.88, speed: 1.05, act: 1.05 };
+const P3 = { kind: "phase" as const, step: 3, at: 0.5, dmg: 1.24, kb: 1.15, cd: 0.78, speed: 1.1, act: 1.1 };
+const P4 = { kind: "phase" as const, step: 4, at: 0.25, dmg: 1.38, kb: 1.25, cd: 0.68, speed: 1.18, act: 1.18 };
+
+export const BOSS_PHASES: Partial<Record<BossDesign, Form[]>> = {
+  antimatter: [
+    {
+      ...P2, power: "umbra", title: "UNSTABLE PAIR", dodge: 0.1,
+      blurb: "Matter and antimatter split off it and circle its body. Its shots come in threes and pass through.",
+      body: "hsl(268 45% 20%)", glow: "hsl(186 100% 82%)", a: "hsl(268 60% 34%)", b: "hsl(186 100% 80%)",
+      moves: [
+        M({ id: "twin-orbit", name: "Twin Orbit", kind: "projectile", anim: "thrust", range: 580, minRange: 80, cd: 3, dmg: 7, speed: 560, size: 11, count: 3, spread: 0.22, pierce: true, shape: "orb" }),
+        M({ id: "antimatter-grasp", name: "Antimatter Grasp", kind: "pull", anim: "cast", range: 440, minRange: 110, cd: 4.5, dmg: 9, status: "slow", statusDur: 1, wind: 0.24 }),
+      ],
+    },
+    {
+      ...P3, power: "umbra", title: "ANNIHILATION ENGINE", drain: 0.12,
+      blurb: "Its body cracks open over pure antimatter and a broken halo turns behind its head. Every hit it lands takes a little health back.",
+      body: "hsl(200 60% 12%)", glow: "hsl(186 100% 88%)", a: "hsl(186 100% 56%)", b: "hsl(0 0% 100%)",
+      moves: [
+        M({ id: "chain-annihilation", name: "Chain Annihilation", kind: "eruption", anim: "slam", range: 600, minRange: 40, cd: 6, dmg: 12, radius: 44, count: 5, lift: -560, status: "blind", statusDur: 0.6, wind: 0.36 }),
+        M({ id: "erasure-beam", name: "Erasure Beam", kind: "beam", anim: "cast", range: 620, minRange: 60, cd: 4, dmg: 18, act: 0.4, kb: 300, wind: 0.36 }),
+      ],
+    },
+    {
+      ...P4, power: "umbra", title: "ZERO STATE", drain: 0.12, guard: 0.8,
+      blurb: "Nothing left but the void it carries. Wings of erased space spread behind it, and Big Crunch blasts most of the arena.",
+      body: "hsl(0 0% 4%)", glow: "hsl(186 100% 70%)", a: "hsl(268 80% 12%)", b: "hsl(186 100% 76%)", dark: "hsl(268 60% 3%)",
+      moves: [
+        M({ id: "absolute-null", name: "Absolute Null", kind: "zone", anim: "raise", range: 440, cd: 9, dmg: 8, radius: 170, dur: 4.5, pullIn: 260, erase: true, status: "slow", statusDur: 0.6, wind: 0.4 }),
+        M({ id: "big-crunch", name: "Big Crunch", kind: "burst", anim: "raise", range: 480, cd: 12, dmg: 16, radius: 440, kb: 420, lift: -420, wind: 0.55, rec: 0.35 }),
+      ],
+    },
+  ],
+  maelstrom: [
+    {
+      ...P2, power: "hydro", title: "RISING TIDE",
+      blurb: "The sea climbs its body and swirls around its waist. An undertow rolls along the floor and it rides the tide straight at you.",
+      body: "hsl(208 75% 26%)", glow: "hsl(186 100% 80%)", a: "hsl(205 90% 44%)", b: "hsl(186 100% 84%)",
+      moves: [
+        M({ id: "undertow", name: "Undertow", kind: "projectile", anim: "slam", range: 900, minRange: 60, cd: 6, dmg: 12, speed: 380, size: 26, pierce: true, ground: true, shape: "wave", kb: 300, lift: -260, status: "slow", statusDur: 1.2, wind: 0.36 }),
+        M({ id: "harpoon-tide", name: "Harpoon Tide", kind: "dash", anim: "lunge", range: 380, cd: 3.8, dmg: 13, dist: 380, act: 0.24, kb: 340, lift: -200 }),
+      ],
+    },
+    {
+      ...P3, power: "hydro", title: "HURRICANE CROWN", dodge: 0.15,
+      blurb: "A storm cloud crowns its head and lightning answers it. It slips some hits like spray.",
+      body: "hsl(220 35% 22%)", glow: "hsl(54 100% 72%)", a: "hsl(220 40% 36%)", b: "hsl(54 100% 74%)",
+      moves: [
+        M({ id: "lightning-trident", name: "Lightning Trident", kind: "beam", anim: "thrust", range: 520, minRange: 60, cd: 3.6, dmg: 15, act: 0.3, status: "stun", statusDur: 0.3, wind: 0.28 }),
+        M({ id: "squall-line", name: "Squall Line", kind: "rain", anim: "raise", range: 560, cd: 6, dmg: 8, count: 9, radius: 200, status: "stun", statusDur: 0.2, wind: 0.36, rec: 0.3 }),
+      ],
+    },
+    {
+      ...P4, power: "hydro", title: "ABYSSAL LEVIATHAN", regen: 1.6, guard: 0.85,
+      blurb: "A sea serpent from the deep coils behind it. The storm mends it, and its last whirlpool drowns half the arena.",
+      body: "hsl(200 80% 10%)", glow: "hsl(170 100% 66%)", a: "hsl(205 90% 22%)", b: "hsl(170 100% 70%)", dark: "hsl(210 70% 5%)",
+      moves: [
+        M({ id: "leviathan-maw", name: "Leviathan's Maw", kind: "pull", anim: "cast", range: 520, minRange: 100, cd: 5, dmg: 14, status: "slow", statusDur: 1.2, wind: 0.28 }),
+        M({ id: "drowned-world", name: "Drowned World", kind: "zone", anim: "slam", range: 420, cd: 10, dmg: 7, radius: 200, dur: 5, pullIn: 200, status: "slow", statusDur: 0.6, wind: 0.4 }),
+      ],
+    },
+  ],
+  magmaw: [
+    {
+      ...P2, power: "terra", title: "ERUPTION", guard: 0.85,
+      blurb: "Its cracks split wide and magma runs down its body. It takes less damage and spits burning rock.",
+      body: "hsl(12 50% 22%)", glow: "hsl(28 100% 60%)", a: "hsl(16 100% 46%)", b: "hsl(40 100% 64%)",
+      moves: [
+        M({ id: "magma-geyser", name: "Magma Geyser", kind: "eruption", anim: "uppercut", range: 480, minRange: 50, cd: 4.6, dmg: 14, radius: 54, lift: -820, status: "burn", statusDur: 1.5, wind: 0.3 }),
+        M({ id: "cinder-spit", name: "Cinder Spit", kind: "projectile", anim: "thrust", range: 560, minRange: 80, cd: 2.6, dmg: 6, speed: 520, size: 11, count: 3, spread: 0.2, arc: true, shape: "rock", status: "burn", statusDur: 1.5 }),
+      ],
+    },
+    {
+      ...P3, power: "terra", title: "PYROCLASTIC", guard: 0.8,
+      blurb: "Vents burst open on its shoulders and a column of ash pours out. Its ash blinds, and a burning flow rolls across the floor.",
+      body: "hsl(20 15% 14%)", glow: "hsl(20 100% 56%)", a: "hsl(18 30% 28%)", b: "hsl(32 100% 60%)", dark: "hsl(20 20% 6%)",
+      moves: [
+        M({ id: "ash-storm", name: "Ash Storm", kind: "zone", anim: "raise", range: 380, cd: 8.5, dmg: 6, radius: 160, dur: 4.5, status: "blind", statusDur: 0.6, wind: 0.35 }),
+        M({ id: "pyroclastic-flow", name: "Pyroclastic Flow", kind: "projectile", anim: "slam", range: 900, minRange: 60, cd: 7, dmg: 16, speed: 360, size: 32, pierce: true, ground: true, shape: "wave", kb: 440, lift: -340, status: "burn", statusDur: 2, wind: 0.4, rec: 0.35 }),
+      ],
+    },
+    {
+      ...P4, power: "terra", title: "MOLTEN CORE", guard: 0.75, regen: 1.2,
+      blurb: "Its shell melts away from a white-hot core and a ring of obsidian circles it. Supervolcano blasts most of the arena.",
+      body: "hsl(14 90% 40%)", glow: "hsl(48 100% 70%)", a: "hsl(10 100% 48%)", b: "hsl(50 100% 70%)",
+      moves: [
+        M({ id: "supervolcano", name: "Supervolcano", kind: "burst", anim: "raise", range: 460, cd: 12, dmg: 14, radius: 420, kb: 400, lift: -520, status: "burn", statusDur: 3, wind: 0.55, rec: 0.35 }),
+        M({ id: "caldera-crush", name: "Caldera Crush", kind: "burst", anim: "slam", range: 160, cd: 7, dmg: 22, radius: 200, kb: 560, lift: -400, status: "burn", statusDur: 2.5, wind: 0.36, rec: 0.38 }),
+      ],
+    },
+  ],
+  everwinter: [
+    {
+      ...P2, power: "cryo", title: "BLACK ICE", dodge: 0.15,
+      blurb: "Spikes of black ice grow along its shoulders. Glaciers break out of the floor, and it slips some hits.",
+      body: "hsl(210 40% 60%)", glow: "hsl(44 90% 72%)", a: "hsl(210 60% 50%)", b: "hsl(44 95% 76%)",
+      moves: [
+        M({ id: "glacier-fang", name: "Glacier Fang", kind: "eruption", anim: "slam", range: 520, minRange: 50, cd: 5, dmg: 12, radius: 44, count: 3, lift: -560, status: "slow", statusDur: 1.4, wind: 0.34 }),
+        M({ id: "frozen-second", name: "Frozen Second", kind: "blink", anim: "kick", range: 520, minRange: 120, cd: 4.2, dmg: 13, kb: 320, status: "freeze", statusDur: 0.5 }),
+      ],
+    },
+    {
+      ...P3, power: "cryo", title: "STOPPED HOUR", drain: 0.15,
+      blurb: "A frozen clock face turns behind it. Its clock hands fly in volleys, and the seconds it steals come back as health.",
+      body: "hsl(44 50% 70%)", glow: "hsl(44 100% 80%)", a: "hsl(42 80% 54%)", b: "hsl(200 90% 90%)",
+      moves: [
+        M({ id: "clock-hands", name: "Clock Hands", kind: "projectile", anim: "cast", range: 580, minRange: 80, cd: 3, dmg: 6, speed: 640, size: 10, count: 5, spread: 0.14, shape: "blade", status: "slow", statusDur: 1 }),
+        M({ id: "rewound-blizzard", name: "Rewound Blizzard", kind: "rain", anim: "raise", range: 540, cd: 6, dmg: 8, count: 8, radius: 180, shape: "shard", status: "freeze", statusDur: 0.4, wind: 0.36, rec: 0.3 }),
+      ],
+    },
+    {
+      ...P4, power: "cryo", title: "ENDLESS WINTER", guard: 0.8, regen: 1.2,
+      blurb: "A crown of icicles and a blizzard that never stops. Eternal Stop freezes the whole arena for longer than any Time Stop.",
+      body: "hsl(200 70% 94%)", glow: "hsl(190 100% 96%)", a: "hsl(200 90% 68%)", b: "hsl(0 0% 100%)",
+      moves: [
+        M({ id: "eternal-stop", name: "Eternal Stop", kind: "burst", anim: "raise", range: 2000, cd: 15, dmg: 10, radius: 60, world: true, status: "freeze", statusDur: 2.4, wind: 0.55, rec: 0.2 }),
+        M({ id: "absolute-winter", name: "Absolute Winter", kind: "zone", anim: "slam", range: 400, cd: 9, dmg: 7, radius: 190, dur: 5, pullIn: 120, status: "slow", statusDur: 0.8, wind: 0.36 }),
+      ],
+    },
+  ],
 };

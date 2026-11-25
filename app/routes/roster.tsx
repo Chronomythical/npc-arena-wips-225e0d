@@ -128,6 +128,7 @@ const FORM_TONE: Record<FormKind, "neutral" | "info" | "success" | "warning" | "
   mastery: "info",
   mystic: "success",
   nightmare: "danger",
+  phase: "danger",
 };
 
 /** A fighter's form: its mode, its own name, what it does and the moves it adds. */

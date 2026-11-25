@@ -253,13 +253,14 @@ function drawScythe(ctx: CanvasRenderingContext2D, pv: Pt, a: number, face: numb
 
 export function drawBossDesign(
   ctx: CanvasRenderingContext2D, design: BossDesign, layer: "back" | "front", p: BossRig,
-  s: number, face: number, t: number, alive: boolean, vx: number, act?: BossAct,
+  s: number, face: number, t: number, alive: boolean, vx: number, act?: BossAct, phase = 1,
 ) {
   ctx.save();
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   const { head, neck, hip, shoulder } = p;
   const mid = { x: (hip.x + head.x) / 2, y: (hip.y + head.y) / 2 };
+  if (layer === "back" && phase > 1 && alive) drawBossPhase(ctx, design, layer, p, s, face, t, phase);
   if (layer === "back") drawBossExtras(ctx, design, layer, p, s, face, t, alive, vx, act);
   switch (design) {
     // ----- Nullshade: matter and antimatter -----
@@ -770,6 +771,301 @@ export function drawBossDesign(
   }
   ctx.restore();
   if (layer === "front") drawBossExtras(ctx, design, layer, p, s, face, t, alive, vx, act);
+  if (layer === "front" && phase > 1 && alive) drawBossPhase(ctx, design, layer, p, s, face, t, phase);
+}
+
+/**
+ * What a boss grows as it breaks into its 2nd, 3rd and 4th phase (BOSS_PHASES in bosses.ts). Each phase keeps
+ * the pieces of the phases before it and adds its own, so a 4th-phase boss wears all three.
+ */
+function drawBossPhase(
+  ctx: CanvasRenderingContext2D, design: BossDesign, layer: "back" | "front", p: BossRig,
+  s: number, face: number, t: number, phase: number,
+) {
+  const { head, hip, shoulder, neck } = p;
+  const mid = { x: (hip.x + head.x) / 2, y: (hip.y + head.y) / 2 };
+  const back = -face;
+  const front = layer === "front";
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  /** Things circling the body: the near half is drawn on the front pass, the far half on the back pass. */
+  const orbit = (n: number, rx: number, ry: number, cy: number, speed: number, draw: (x: number, y: number, i: number, depth: number) => void) => {
+    for (let i = 0; i < n; i++) {
+      const an = t * speed + (i / n) * TAU;
+      const depth = Math.sin(an);
+      if (depth > 0 !== front) continue;
+      draw(mid.x + Math.cos(an) * rx * s, cy + depth * ry * s, i, depth);
+    }
+  };
+  switch (design) {
+    // ----- Nullshade -----
+    case "antimatter": {
+      // 2: a matter orb and an antimatter orb circling each other around the body
+      ctx.globalCompositeOperation = "lighter";
+      orbit(2, 46, 14, mid.y, 2.2, (x, y, i) => {
+        glow(ctx, x, y, 12 * s, i ? "hsl(186 100% 80% / 0.9)" : "hsl(0 0% 100% / 0.95)", "hsl(186 100% 60% / 0)");
+        ctx.fillStyle = i ? "hsl(268 70% 10%)" : "hsl(0 0% 100%)";
+        ctx.beginPath();
+        ctx.arc(x, y, 4.5 * s, 0, TAU);
+        ctx.fill();
+      });
+      ctx.globalCompositeOperation = "source-over";
+      if (phase >= 3) {
+        if (!front) {
+          // 3: a broken halo turning behind the head
+          ctx.strokeStyle = "hsl(186 100% 74% / 0.9)";
+          ctx.lineWidth = 2.6 * s;
+          for (let i = 0; i < 5; i++) {
+            const a0 = t * 1.2 + (i / 5) * TAU;
+            ctx.beginPath();
+            ctx.arc(head.x, head.y - 4 * s, (22 + (i % 2) * 3) * s, a0, a0 + 0.8);
+            ctx.stroke();
+          }
+        } else {
+          // and cracks of pure antimatter across the body
+          ctx.globalCompositeOperation = "lighter";
+          ctx.strokeStyle = `hsl(186 100% 76% / ${0.6 + 0.3 * Math.sin(t * 7)})`;
+          ctx.lineWidth = 1.8 * s;
+          jagLine(ctx, [{ x: neck.x - 4 * s, y: neck.y + 4 * s }, { x: mid.x + 5 * s, y: mid.y }, { x: hip.x - 3 * s, y: hip.y - 4 * s }], 5, 1);
+          jagLine(ctx, [{ x: mid.x + 5 * s, y: mid.y }, { x: mid.x + 14 * s, y: mid.y + 10 * s }], 4, 2);
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      if (phase >= 4 && !front) {
+        // 4: wings of erased space, shards of black edged in light
+        const flap = Math.sin(t * 2.4) * 0.12;
+        for (let side = 0; side < 2; side++) {
+          const dir = side ? back : -back;
+          for (let j = 0; j < 4; j++) {
+            const an = -Math.PI / 2 + dir * (0.5 + j * 0.32 + flap);
+            const len = (70 - j * 9) * s;
+            const bx = shoulder.x + dir * 4 * s, by = shoulder.y + j * 4 * s;
+            const tx = bx + Math.cos(an) * len, ty = by + Math.sin(an) * len;
+            const nx = Math.cos(an + Math.PI / 2) * 7 * s, ny = Math.sin(an + Math.PI / 2) * 7 * s;
+            ctx.fillStyle = "hsl(268 60% 4% / 0.92)";
+            ctx.strokeStyle = "hsl(186 100% 72% / 0.85)";
+            ctx.lineWidth = 1.4 * s;
+            ctx.beginPath();
+            ctx.moveTo(bx + nx, by + ny);
+            ctx.lineTo(tx, ty);
+            ctx.lineTo(bx - nx, by - ny);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+      }
+      break;
+    }
+    // ----- Maelstrom -----
+    case "maelstrom": {
+      // 2: the sea swirling around its waist, throwing off spray
+      ctx.strokeStyle = "hsl(186 100% 80% / 0.8)";
+      ctx.lineWidth = 3 * s;
+      ctx.setLineDash([12 * s, 7 * s]);
+      for (let i = 0; i < 2; i++) {
+        ctx.lineDashOffset = t * (i ? 70 : -55) * s;
+        const a0 = front ? 0.15 : Math.PI + 0.15;
+        ctx.beginPath();
+        ctx.ellipse(hip.x, hip.y - (4 + i * 10) * s, (30 + i * 6) * s, (7 + i * 2) * s, 0, a0, a0 + Math.PI - 0.3);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      if (front) motes(ctx, hip.x, hip.y, 70 * s, 40 * s, t * 2, 6, "hsl(186 100% 86%)", 1.8 * s);
+      if (phase >= 3) {
+        const cy = head.y - 30 * s;
+        if (!front) {
+          // 3: a storm cloud crowning its head
+          for (let i = 0; i < 6; i++) {
+            const x = head.x + (i - 2.5) * 8 * s + Math.sin(t * 2 + i) * 2 * s;
+            ctx.fillStyle = i % 2 ? "hsl(222 25% 22%)" : "hsl(222 22% 30%)";
+            ctx.beginPath();
+            ctx.arc(x, cy + Math.sin(i * 1.7) * 4 * s, (10 + (i % 3) * 3) * s, 0, TAU);
+            ctx.fill();
+          }
+        } else if (Math.floor(t * 6) % 5 === 0) {
+          // and lightning that answers it
+          ctx.globalCompositeOperation = "lighter";
+          ctx.strokeStyle = "hsl(54 100% 78%)";
+          ctx.lineWidth = 2.2 * s;
+          const sx = head.x + Math.sin(Math.floor(t * 6) * 3.1) * 16 * s;
+          jagLine(ctx, [{ x: sx, y: cy + 6 * s }, { x: sx + 6 * s, y: cy + 22 * s }, { x: head.x, y: head.y - 10 * s }], 6, Math.floor(t * 6));
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      if (phase >= 4 && !front) {
+        // 4: a sea serpent from the deep, coiling up behind it
+        const segs = 16;
+        for (let i = segs; i >= 0; i--) {
+          const u = i / segs;
+          const x = hip.x + back * (26 - 40 * u) * s + Math.sin(t * 2 + u * 7) * 16 * s;
+          const y = hip.y + 18 * s - u * 120 * s;
+          const r = (4 + 9 * Math.sin(u * Math.PI * 0.9 + 0.2)) * s;
+          ctx.fillStyle = i % 2 ? "hsl(200 70% 16%)" : "hsl(195 60% 22%)";
+          ctx.strokeStyle = "hsl(170 100% 62% / 0.5)";
+          ctx.lineWidth = 1.2 * s;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, TAU);
+          ctx.fill();
+          ctx.stroke();
+          if (i === segs) {
+            ctx.fillStyle = "hsl(200 70% 14%)";
+            ctx.beginPath();
+            ctx.ellipse(x - back * 8 * s, y - 2 * s, 13 * s, 7 * s, 0, 0, TAU);
+            ctx.fill();
+            ctx.stroke();
+            ctx.globalCompositeOperation = "lighter";
+            glow(ctx, x - back * 12 * s, y - 4 * s, 5 * s, "hsl(170 100% 80%)", "hsl(170 100% 60% / 0)");
+            ctx.globalCompositeOperation = "source-over";
+          }
+        }
+      }
+      break;
+    }
+    // ----- Magmaw -----
+    case "magmaw": {
+      if (front) {
+        // 2: magma running down its body and dripping off its fists
+        ctx.globalCompositeOperation = "lighter";
+        ctx.strokeStyle = `hsl(28 100% 58% / ${0.7 + 0.2 * Math.sin(t * 5)})`;
+        ctx.lineWidth = 2.4 * s;
+        jagLine(ctx, [{ x: neck.x + 3 * s, y: neck.y + 2 * s }, { x: mid.x - 4 * s, y: mid.y }, { x: hip.x + 4 * s, y: hip.y }], 4, 3);
+        for (const h of [p.hF, p.hB]) {
+          for (let i = 0; i < 2; i++) {
+            const k = (t * 1.4 + i * 0.5) % 1;
+            glow(ctx, h.x, h.y + k * 30 * s, (3.5 - k * 2) * s, "hsl(44 100% 70%)", "hsl(20 100% 50% / 0)");
+          }
+        }
+        ctx.globalCompositeOperation = "source-over";
+      }
+      if (phase >= 3) {
+        if (!front) {
+          // 3: a column of ash pouring up from its shoulders
+          for (let i = 0; i < 8; i++) {
+            const k = (t * 0.5 + i / 8) % 1;
+            const x = shoulder.x + back * 6 * s + Math.sin(i * 2.1 + t) * 10 * s * (1 + k);
+            ctx.fillStyle = `hsl(20 8% ${18 + (i % 3) * 6}% / ${0.75 * (1 - k)})`;
+            ctx.beginPath();
+            ctx.arc(x, shoulder.y - 10 * s - k * 100 * s, (7 + k * 14) * s, 0, TAU);
+            ctx.fill();
+          }
+          ctx.globalCompositeOperation = "lighter";
+          motes(ctx, shoulder.x, shoulder.y - 10 * s, 40 * s, 110 * s, t * 1.4, 7, "hsl(28 100% 62%)", 1.6 * s);
+          ctx.globalCompositeOperation = "source-over";
+        } else {
+          // and vents glowing open on its shoulders
+          for (const dx of [-8, 8]) {
+            const x = shoulder.x + dx * s, y = shoulder.y - 2 * s;
+            ctx.fillStyle = "hsl(20 20% 14%)";
+            ctx.beginPath();
+            ctx.moveTo(x - 6 * s, y + 3 * s);
+            ctx.lineTo(x - 2.5 * s, y - 8 * s);
+            ctx.lineTo(x + 2.5 * s, y - 8 * s);
+            ctx.lineTo(x + 6 * s, y + 3 * s);
+            ctx.closePath();
+            ctx.fill();
+            flame(ctx, x, y - 7 * s, 3 * s, (8 + Math.sin(t * 12 + dx) * 3) * s, "hsl(32 100% 60%)");
+          }
+        }
+      }
+      if (phase >= 4) {
+        // 4: a ring of obsidian circling it and a white-hot core in its chest
+        orbit(6, 50, 16, mid.y + 6 * s, 1.6, (x, y) => {
+          ctx.fillStyle = "hsl(260 18% 12%)";
+          ctx.strokeStyle = "hsl(36 100% 62% / 0.9)";
+          ctx.lineWidth = 1.3 * s;
+          ctx.beginPath();
+          ctx.moveTo(x - 6 * s, y);
+          ctx.lineTo(x - 1 * s, y - 7 * s);
+          ctx.lineTo(x + 6 * s, y - 2 * s);
+          ctx.lineTo(x + 3 * s, y + 6 * s);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        });
+        if (front) {
+          ctx.globalCompositeOperation = "lighter";
+          glow(ctx, mid.x, mid.y - 6 * s, (14 + Math.sin(t * 8) * 2) * s, "hsl(52 100% 92%)", "hsl(30 100% 55% / 0)");
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      break;
+    }
+    // ----- Everwinter -----
+    case "everwinter": {
+      if (front) {
+        // 2: spikes of black ice along its shoulders
+        for (let i = 0; i < 4; i++) {
+          const x = shoulder.x + back * (i * 5 - 4) * s, y = shoulder.y + i * 3 * s;
+          const h = (16 - i * 2.5) * s;
+          ctx.fillStyle = "hsl(214 40% 18%)";
+          ctx.strokeStyle = "hsl(200 90% 86%)";
+          ctx.lineWidth = 1.2 * s;
+          ctx.beginPath();
+          ctx.moveTo(x - 3.5 * s, y);
+          ctx.lineTo(x + back * 6 * s, y - h);
+          ctx.lineTo(x + 3.5 * s, y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+      if (phase >= 3 && !front) {
+        // 3: a frozen clock face turning behind it
+        const r = 60 * s;
+        ctx.fillStyle = "hsl(44 60% 70% / 0.14)";
+        ctx.strokeStyle = "hsl(44 95% 70% / 0.85)";
+        ctx.lineWidth = 2.4 * s;
+        ctx.beginPath();
+        ctx.arc(mid.x, mid.y - 6 * s, r, 0, TAU);
+        ctx.fill();
+        ctx.stroke();
+        for (let i = 0; i < 12; i++) {
+          const an = (i / 12) * TAU;
+          const r0 = r * (i % 3 ? 0.88 : 0.8);
+          ctx.lineWidth = (i % 3 ? 1.4 : 2.4) * s;
+          ctx.beginPath();
+          ctx.moveTo(mid.x + Math.cos(an) * r0, mid.y - 6 * s + Math.sin(an) * r0);
+          ctx.lineTo(mid.x + Math.cos(an) * r * 0.97, mid.y - 6 * s + Math.sin(an) * r * 0.97);
+          ctx.stroke();
+        }
+        for (const [len, sp, w] of [[0.55, 0.3, 3], [0.8, 2.4, 1.8]] as const) {
+          const an = t * sp - Math.PI / 2;
+          ctx.strokeStyle = "hsl(200 90% 90% / 0.9)";
+          ctx.lineWidth = w * s;
+          ctx.beginPath();
+          ctx.moveTo(mid.x, mid.y - 6 * s);
+          ctx.lineTo(mid.x + Math.cos(an) * r * len, mid.y - 6 * s + Math.sin(an) * r * len);
+          ctx.stroke();
+        }
+      }
+      if (phase >= 4) {
+        if (!front) {
+          // 4: a blizzard that never stops
+          motes(ctx, mid.x, hip.y + 30 * s, 150 * s, 170 * s, t * 1.6, 16, "hsl(0 0% 100% / 0.9)", 1.8 * s, -1);
+        } else {
+          // and a crown of icicles
+          for (let i = 0; i < 5; i++) {
+            const x = head.x + (i - 2) * 5 * s;
+            const h = (i === 2 ? 20 : i % 2 ? 14 : 10) * s;
+            ctx.fillStyle = "hsl(195 90% 92%)";
+            ctx.strokeStyle = "hsl(205 60% 50%)";
+            ctx.lineWidth = 1 * s;
+            ctx.beginPath();
+            ctx.moveTo(x - 2.8 * s, head.y - 9 * s);
+            ctx.lineTo(x, head.y - 9 * s - h);
+            ctx.lineTo(x + 2.8 * s, head.y - 9 * s);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+      }
+      break;
+    }
+  }
+  ctx.restore();
 }
 
 /**
