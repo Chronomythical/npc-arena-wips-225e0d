@@ -3,7 +3,7 @@
 // and a drawing behind and in front of it. The engine (`arena-engine.ts`) times and plays them; a hybrid,
 // a team-attack fighter or a juggernaut uses the entrance of the element it carries.
 import type { Power, BossDesign } from "./fighters";
-import type { PShape } from "./move-looks";
+import { drawCrane, type PShape } from "./move-looks";
 
 /** Seconds one entrance lasts. */
 export const INTRO_LEN = 1.5;
@@ -1189,6 +1189,124 @@ export const INTROS: Record<Power, IntroSpec> = {
       ctx.globalCompositeOperation = "lighter";
       const hy = y - 112 * s;
       glow(ctx, x, hy, 44 * s * k + 6 * s, 44 * s * k + 6 * s, hsla(0, 0, 100, 0.9 * (1 - k)), hsla(318, 100, 66, 0));
+      ctx.restore();
+    },
+  },
+
+  // Overtone: four slow beats thump through the arena, each one a ring of sound closing on the spot and a row of
+  // equalizer bars jumping higher, then the drop: a huge shockwave and he lands on the beat.
+  sono: {
+    len: 1.8, hit: 0.56, shake: 11, wave: ["hsl(36 100% 58%)", "hsl(48 100% 86%)"],
+    body: (u, s) => base(u < 0.56 ? "air" : settle(u, "land", 0.72), {
+      alpha: u < 0.5 ? 0 : 1,
+      dy: u < 0.56 ? -(1 - easeIn(seg(u, 0.5, 0.56))) * 120 * s : 0,
+      sx: u < 0.62 && u >= 0.56 ? 1.15 : 1, sy: u < 0.62 && u >= 0.56 ? 0.85 : 1,
+      solid: "hsl(40 100% 70%)", solidA: 1 - seg(u, 0.56, 0.8),
+    }),
+    bursts: [
+      { at: 0.56, n: 28, spd: 520, shape: "ring", a: "hsl(36 100% 58%)", b: "hsl(48 100% 86%)", grav: 0, add: true, from: "body", dir: "out" },
+      { at: 0.56, n: 20, spd: 480, shape: "dust", a: "hsl(30 20% 50%)", b: "hsl(40 30% 76%)", grav: -20, add: false, from: "feet", dir: "flat" },
+    ],
+    back: ({ ctx, x, y, ground, s, u }) => {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const cy = y - 55 * s;
+      // the build: one ring of sound closing in on each beat
+      for (let i = 0; i < 4; i++) {
+        const k = seg(u, i * 0.13, i * 0.13 + 0.13);
+        if (k <= 0 || k >= 1) continue;
+        const R = (220 - 170 * easeIn(k)) * s;
+        ctx.strokeStyle = hsla(i % 2 ? 48 : 36, 100, i % 2 ? 86 : 58, 0.8 * (0.3 + 0.7 * k));
+        ctx.lineWidth = (3 + i) * s;
+        ctx.beginPath(); ctx.ellipse(x, cy, R, R * 0.8, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      // the drop: one huge ring blowing outward
+      const drop = seg(u, 0.56, 0.9);
+      if (drop > 0 && drop < 1) {
+        ctx.strokeStyle = hsla(0, 0, 100, 0.9 * (1 - drop));
+        ctx.lineWidth = 8 * s * (1 - drop);
+        ctx.beginPath(); ctx.ellipse(x, cy, (30 + 260 * easeOut(drop)) * s, (24 + 120 * easeOut(drop)) * s, 0, 0, Math.PI * 2); ctx.stroke();
+        glow(ctx, x, ground, 180 * s * easeOut(drop), 16 * s, hsla(36, 100, 60, 0.6 * (1 - drop)), hsla(36, 100, 60, 0));
+      }
+      ctx.restore();
+    },
+    front: ({ ctx, x, ground, s, u, t }) => {
+      // equalizer bars on either side of the spot, jumping higher on every beat and dropping away after he lands
+      const on = seg(u, 0, 0.08) * (1 - seg(u, 0.7, 0.95));
+      if (on <= 0) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const beat = Math.pow(Math.max(0, Math.sin(Math.min(u, 0.56) / 0.13 * Math.PI)), 2);
+      const build = Math.min(1, u / 0.56);
+      for (const sd of [-1, 1]) {
+        for (let i = 0; i < 5; i++) {
+          const bx = x + sd * (70 + i * 14) * s;
+          const bh = (10 + 70 * build * (0.4 + 0.6 * beat) * (1 - i * 0.12) + 6 * Math.sin(t * 20 + i)) * s * on;
+          ctx.fillStyle = hsla(i === 0 ? 48 : 36, 100, i === 0 ? 86 : 58, 0.75 * on);
+          ctx.fillRect(bx - 4 * s, ground - bh, 8 * s, bh);
+        }
+      }
+      ctx.restore();
+    },
+  },
+
+  // Vellum: a single sheet of paper drifts down out of the sky, folds itself smaller and smaller into a crane that
+  // circles the spot once, then unfolds all at once into Vellum in a burst of paper scraps.
+  paper: {
+    len: 1.9, hit: 0.62, shake: 6, wave: ["hsl(42 40% 92%)", "hsl(352 85% 56%)"],
+    body: (u, s) => base(u < 0.62 ? "float" : settle(u, "flex", 0.76), {
+      alpha: seg(u, 0.56, 0.64),
+      sx: 0.5 + 0.5 * easeOut(seg(u, 0.56, 0.7)), sy: 0.5 + 0.5 * easeOut(seg(u, 0.56, 0.7)),
+      solid: "hsl(42 50% 96%)", solidA: 1 - seg(u, 0.62, 0.86),
+    }),
+    bursts: [
+      { at: 0.62, n: 34, spd: 380, shape: "leaf", a: "hsl(42 40% 92%)", b: "hsl(42 50% 98%)", grav: 160, add: false, from: "body", dir: "out" },
+      { at: 0.62, n: 10, spd: 300, shape: "leaf", a: "hsl(352 85% 56%)", b: "hsl(352 85% 66%)", grav: 160, add: false, from: "body", dir: "out" },
+    ],
+    back: ({ ctx, x, y, s, u, t }) => {
+      ctx.save();
+      const cy = y - 60 * s;
+      // the sheet drifting down, rocking side to side like falling paper
+      const fall = seg(u, 0, 0.3);
+      if (fall < 1) {
+        const px = x + Math.sin(fall * Math.PI * 3) * 40 * s, py = cy - (1 - easeOut(fall)) * 220 * s;
+        const sz = 34 * s;
+        ctx.translate(px, py);
+        ctx.rotate(Math.sin(fall * Math.PI * 3) * 0.5);
+        ctx.scale(1, 0.45 + 0.25 * Math.cos(fall * 12));
+        ctx.fillStyle = "hsl(42 45% 93%)";
+        ctx.fillRect(-sz, -sz, sz * 2, sz * 2);
+        ctx.strokeStyle = "hsl(352 85% 56%)";
+        ctx.lineWidth = 2 * s;
+        ctx.strokeRect(-sz, -sz, sz * 2, sz * 2);
+        ctx.restore();
+        return;
+      }
+      // folding: the square halves, then halves again, into a diamond
+      const fold = seg(u, 0.3, 0.42);
+      if (fold < 1) {
+        const sz = 34 * s * (1 - 0.6 * easeInOut(fold));
+        ctx.translate(x, cy);
+        ctx.rotate(fold * Math.PI / 4);
+        ctx.fillStyle = "hsl(42 45% 93%)";
+        ctx.fillRect(-sz, -sz, sz * 2, sz * 2);
+        ctx.strokeStyle = "hsl(30 20% 60%)";
+        ctx.lineWidth = 1.5 * s;
+        ctx.beginPath(); ctx.moveTo(-sz, -sz); ctx.lineTo(sz, sz); ctx.moveTo(sz, -sz); ctx.lineTo(-sz, sz); ctx.stroke();
+        ctx.strokeStyle = "hsl(352 85% 56%)";
+        ctx.lineWidth = 2 * s;
+        ctx.strokeRect(-sz, -sz, sz * 2, sz * 2);
+        ctx.restore();
+        return;
+      }
+      // the crane: one loop round the spot, then a dive into the middle
+      const fly = seg(u, 0.42, 0.62);
+      if (fly < 1) {
+        const a = fly * Math.PI * 2;
+        const R = 70 * s * (1 - easeIn(fly));
+        const cx = x + Math.cos(a) * R, cyy = cy + Math.sin(a) * R * 0.4;
+        drawCrane(ctx, cx, cyy, 14 * s, a + Math.PI / 2, Math.sin(t * 16), "hsl(42 45% 95%)", "hsl(352 85% 56%)");
+      }
       ctx.restore();
     },
   },

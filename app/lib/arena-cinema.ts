@@ -407,6 +407,43 @@ const MARKS: Partial<Record<Power, MarkDraw>> = {
       ctx.fillRect(x - z / 2, -z - r() * 3, z, z);
     }
   },
+  sono: (ctx, m, k, r, t) => {
+    // sound rings rippling out across the floor in time, and a row of equalizer bars bouncing at the middle
+    flat(ctx, () => {
+      ctx.globalCompositeOperation = "lighter";
+      for (let i = 0; i < 3; i++) {
+        const q = (t * 1.6 + i / 3) % 1;
+        ctx.strokeStyle = withA(i % 2 ? m.b : m.a, 0.7 * k * (1 - q));
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(0, 0, m.w * (0.2 + 0.8 * q), 0, Math.PI * 2); ctx.stroke();
+      }
+    });
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 7; i++) {
+      const h = (3 + 9 * Math.abs(Math.sin(t * (5 + r() * 4) + i * 1.3))) * k;
+      ctx.fillStyle = withA(i % 3 === 1 ? m.b : m.a, 0.8 * k);
+      ctx.fillRect((i - 3) * 5 - 1.5, -h, 3, h);
+    }
+  },
+  paper: (ctx, m, k, r) => {
+    // a red ink seal pressed into the floor, with torn scraps of paper scattered round it
+    flat(ctx, () => {
+      ctx.strokeStyle = withA(m.b, 0.75 * k);
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, m.w * 0.32, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-m.w * 0.14, -m.w * 0.12); ctx.lineTo(m.w * 0.14, m.w * 0.12); ctx.moveTo(m.w * 0.12, -m.w * 0.14); ctx.lineTo(-m.w * 0.04, m.w * 0.02); ctx.stroke();
+    });
+    for (let i = 0; i < 8; i++) {
+      const x = (r() * 2 - 1) * m.w * 0.85, y = -(r() * 4), w = 4 + r() * 5, h = 2 + r() * 3;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((r() - 0.5) * 1.4);
+      ctx.fillStyle = withA(i % 4 === 0 ? m.b : m.a, 0.85 * k);
+      ctx.fillRect(-w / 2, -h / 2, w, h);
+      ctx.restore();
+    }
+  },
 };
 
 const ringMark: MarkDraw = (ctx, m, k) => {

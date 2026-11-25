@@ -297,6 +297,29 @@ FORMS.portal = {
   ],
 };
 
+FORMS.sono = {
+  power: "sono", kind: "nightmare", title: "FULL DISTORTION", ...NIGHTMARE,
+  blurb: "The music breaks into distortion. His speakers blow out into black static, every hit lands on the beat and the arena shakes in time.",
+  body: "hsl(220 20% 5%)", glow: "hsl(8 100% 58%)", a: "hsl(20 100% 50%)", b: "hsl(8 100% 66%)", dark: "hsl(0 0% 0%)",
+  dmg: 1.35, kb: 1.25, cd: 0.7, speed: 1.2, act: 1.2,
+  moves: [
+    M({ id: "final-chorus", name: "Final Chorus", kind: "beam", anim: "thrust", range: 880, minRange: 60, cd: 5, dmg: 24, act: 0.4, kb: 400, wind: 0.4 }),
+    M({ id: "mosh-pit", name: "Mosh Pit", kind: "zone", anim: "slam", range: 400, cd: 9, dmg: 8, radius: 160, dur: 4, pullIn: 300, status: "slow", statusDur: 0.6, wind: 0.34 }),
+    M({ id: "earsplitter", name: "Earsplitter", kind: "burst", anim: "raise", range: 180, cd: 7, dmg: 22, radius: 220, kb: 560, lift: -420, status: "stun", statusDur: 0.6, wind: 0.36, rec: 0.35 }),
+  ],
+};
+FORMS.paper = {
+  power: "paper", kind: "nightmare", title: "BLACK INK", ...NIGHTMARE,
+  blurb: "Ink floods every page. The paper turns black and red, the cranes become a swarm and shots that fly into the ink are never seen again.",
+  body: "hsl(0 0% 9%)", glow: "hsl(352 100% 56%)", a: "hsl(352 90% 44%)", b: "hsl(40 60% 90%)", dark: "hsl(0 0% 0%)",
+  dmg: 1.3, kb: 1.2, cd: 0.7, speed: 1.2, act: 1.2,
+  moves: [
+    M({ id: "thousand-cranes", name: "Thousand Cranes", kind: "rain", anim: "raise", range: 580, cd: 6, dmg: 9, count: 9, radius: 190, wind: 0.34, rec: 0.3 }),
+    M({ id: "ink-flood", name: "Ink Flood", kind: "zone", anim: "slam", range: 420, cd: 9, dmg: 8, radius: 150, dur: 4, pullIn: 260, erase: true, status: "blind", statusDur: 0.8, wind: 0.36 }),
+    M({ id: "black-crane", name: "Black Crane", kind: "projectile", anim: "thrust", range: 700, minRange: 80, cd: 4.5, dmg: 20, speed: 440, size: 26, shape: "blade", pierce: true, kb: 420, wind: 0.32 }),
+  ],
+};
+
 /** Pyro's second step: from Blue Flame into red and blue fire at once. Stronger and faster than his Rage Mode. */
 export const PERFECTED_FLAME: Form = {
   power: "pyro", kind: "perfected", title: "RED AND BLUE", at: 0.2, regen: 1,

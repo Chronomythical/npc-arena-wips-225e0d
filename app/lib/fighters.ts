@@ -4,7 +4,7 @@ export type Power =
   | "pyro" | "cryo" | "electro" | "terra" | "aero" | "hydro" | "umbra" | "lux"
   | "gravi" | "tele" | "vita" | "toxi" | "chrono" | "magneto" | "psy" | "shift"
   // quest fighters, earned on the Quests page
-  | "spatio" | "hexizon" | "gamma" | "velo" | "portal";
+  | "spatio" | "hexizon" | "gamma" | "velo" | "portal" | "sono" | "paper";
 
 export type Role = "attacker" | "control" | "tank" | "support" | "trickster";
 
@@ -385,6 +385,44 @@ export const QUESTERS: FighterDef[] = [
       M({ id: "reassemble", name: "Reassemble", kind: "heal", anim: "raise", range: 2000, cd: 12, dmg: 0, heal: 20, below: 0.6, wind: 0.36, rec: 0.3 }),
     ],
   },
+  {
+    id: "sono", name: "Overtone", power: "Sound Manipulation", role: "attacker",
+    ability: "Turns sound into a weapon. Beats that hit like fists, chords that knock fighters flat and a bass drop that throws them into the sky.",
+    color: "hsl(220 14% 14%)", glow: "hsl(36 100% 58%)", hp: 280, speed: 106,
+    moves: [
+      M({ id: "beat-jab", name: "Beat Jab", kind: "melee", anim: "jab", range: 76, cd: 0.7, dmg: 9, kb: 220, wind: 0.12 }),
+      M({ id: "downbeat", name: "Downbeat", kind: "melee", anim: "slam", range: 92, cd: 1.5, dmg: 14, kb: 200, lift: -460, wind: 0.22 }),
+      M({ id: "power-chord", name: "Power Chord", kind: "projectile", anim: "cast", range: 600, minRange: 70, cd: 2.6, dmg: 12, speed: 600, size: 20, shape: "wave", pierce: true, kb: 280 }),
+      M({ id: "staccato", name: "Staccato", kind: "projectile", anim: "jab", range: 540, minRange: 60, cd: 1.6, dmg: 4, speed: 760, size: 8, count: 5, spread: 0.12 }),
+      M({ id: "wall-of-sound", name: "Wall of Sound", kind: "beam", anim: "thrust", range: 580, minRange: 70, cd: 3, dmg: 16, act: 0.36, kb: 320, wind: 0.3 }),
+      M({ id: "bass-drop", name: "Bass Drop", kind: "eruption", anim: "slam", range: 500, minRange: 40, cd: 4.5, dmg: 16, radius: 54, lift: -680, wind: 0.32 }),
+      M({ id: "high-note", name: "High Note", kind: "burst", anim: "raise", range: 150, cd: 5.5, dmg: 14, radius: 170, kb: 460, lift: -260, status: "stun", statusDur: 0.5, wind: 0.3 }),
+      M({ id: "echo-step", name: "Echo Step", kind: "blink", anim: "kick", range: 620, minRange: 100, cd: 3, dmg: 13, kb: 300, lift: -240 }),
+      M({ id: "dead-air", name: "Dead Air", kind: "zone", anim: "raise", range: 400, cd: 8, dmg: 5, radius: 125, dur: 3.5, status: "blind", statusDur: 0.8, wind: 0.32 }),
+      M({ id: "drumroll", name: "Drumroll", kind: "rain", anim: "raise", range: 520, cd: 5.5, dmg: 7, count: 7, radius: 150, wind: 0.32 }),
+      M({ id: "feedback", name: "Feedback", kind: "pull", anim: "cast", range: 460, minRange: 110, cd: 3.6, dmg: 10, status: "stun", statusDur: 0.35 }),
+      M({ id: "crescendo-rush", name: "Crescendo Rush", kind: "dash", anim: "lunge", range: 320, cd: 3.6, dmg: 14, dist: 320, act: 0.22, kb: 380 }),
+    ],
+  },
+  {
+    id: "paper", name: "Vellum", power: "Paper Manipulation", role: "support",
+    ability: "Folds paper into anything. Blades sharp enough to cut, flocks of cranes, scrolls that bind and a body that refolds its own wounds.",
+    color: "hsl(42 35% 88%)", glow: "hsl(352 85% 56%)", hp: 290, speed: 104,
+    moves: [
+      M({ id: "papercut", name: "Papercut", kind: "melee", anim: "lunge", range: 90, cd: 0.8, dmg: 9, kb: 200, crit: 0.25 }),
+      M({ id: "folded-fan", name: "Folded Fan", kind: "melee", anim: "spin", range: 100, cd: 1.4, dmg: 12, kb: 320, heal: 3 }),
+      M({ id: "crane-flock", name: "Crane Flock", kind: "projectile", anim: "cast", range: 560, minRange: 80, cd: 2.2, dmg: 5, speed: 560, size: 10, count: 4, spread: 0.18, shape: "blade" }),
+      M({ id: "shuriken-fold", name: "Shuriken Fold", kind: "projectile", anim: "thrust", range: 600, minRange: 80, cd: 2.4, dmg: 11, speed: 680, size: 13, shape: "disc", pierce: true, kb: 240 }),
+      M({ id: "scroll-unfurl", name: "Scroll Unfurl", kind: "beam", anim: "thrust", range: 540, minRange: 70, cd: 3, dmg: 15, act: 0.3, kb: 260, status: "slow", statusDur: 1, wind: 0.28 }),
+      M({ id: "thousand-folds", name: "Thousand Folds", kind: "burst", anim: "raise", range: 150, cd: 5, dmg: 13, radius: 160, kb: 480, lift: -240, wind: 0.28 }),
+      M({ id: "wrapping-seal", name: "Wrapping Seal", kind: "zone", anim: "raise", range: 420, minRange: 40, cd: 8, dmg: 5, radius: 115, dur: 3.5, pullIn: 220, status: "slow", statusDur: 0.6, wind: 0.32 }),
+      M({ id: "paper-rain", name: "Paper Rain", kind: "rain", anim: "raise", range: 520, cd: 5.5, dmg: 7, count: 7, radius: 160, shape: "blade", wind: 0.32 }),
+      M({ id: "folding-spire", name: "Folding Spire", kind: "eruption", anim: "slam", range: 480, minRange: 40, cd: 4.2, dmg: 14, radius: 46, lift: -600, wind: 0.3 }),
+      M({ id: "paper-plane", name: "Paper Plane", kind: "dash", anim: "lunge", range: 320, cd: 3.4, dmg: 12, dist: 320, act: 0.22, kb: 300, lift: -220 }),
+      M({ id: "paper-tether", name: "Paper Tether", kind: "pull", anim: "cast", range: 460, minRange: 110, cd: 3.6, dmg: 9, status: "stun", statusDur: 0.35 }),
+      M({ id: "refold", name: "Refold", kind: "heal", anim: "raise", range: 2000, cd: 11, dmg: 0, heal: 24, below: 0.65, wind: 0.34, rec: 0.3 }),
+    ],
+  },
 ];
 
 export const QUEST_IDS = new Set<Power>(QUESTERS.map((q) => q.id));
@@ -419,6 +457,8 @@ const WINGS: Record<Power, Wing> = {
   gamma: { word: "Gamma", shape: "orb", status: "poison", statusDur: 1.5 },
   velo: { word: "Mach", shape: "wave" },
   portal: { word: "Portal", shape: "disc", status: "slow", statusDur: 1 },
+  sono: { word: "Sonic", shape: "wave", status: "stun", statusDur: 0.2 },
+  paper: { word: "Paper", shape: "blade", heal: 10 },
 };
 
 export function wingMoves(id: Power): Move[] {

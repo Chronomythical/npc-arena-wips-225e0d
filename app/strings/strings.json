@@ -439,6 +439,16 @@
         "title": "Between Worlds",
         "reward": "Earns Liminal, Portal and Matter Manipulation",
         "story": "A door keeps opening where no door should be."
+      },
+      "encore": {
+        "title": "Encore",
+        "reward": "Earns Overtone, Sound Manipulation",
+        "story": "The crowd keeps cheering after the arena goes quiet, and nobody is in the stands."
+      },
+      "cranes": {
+        "title": "A Thousand Cranes",
+        "reward": "Earns Vellum, Paper Manipulation",
+        "story": "Folded paper birds turn up in the corners of the arena, a few more after every fight."
       }
     },
     "cutscene": {

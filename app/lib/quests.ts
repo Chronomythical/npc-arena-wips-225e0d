@@ -1,4 +1,4 @@
-// Quests: 5 long goals, each earning a quest fighter for good once it is complete and claimed.
+// Quests: 7 long goals, each earning a quest fighter for good once it is complete and claimed.
 // Progress is counted from finished fights and saved in this browser (localStorage), like Story progress.
 // The arena screen reports each finished fight with `recordFight` and each crowned champion with `recordTournament`.
 import { useEffect, useState } from "react";
@@ -22,6 +22,8 @@ export const QUESTS: Quest[] = [
   { id: "gamma", reward: "gamma", goals: [{ stat: "kos", need: 100 }, { stat: "forms", need: 10 }, { stat: "bosses", need: 1 }] },
   { id: "speed", reward: "velo", goals: [{ stat: "fights", need: 20 }, { stat: "kos", need: 150 }, { stat: "tournaments", need: 1 }] },
   { id: "portal", reward: "portal", goals: [{ stat: "fights", need: 40 }, { stat: "forms", need: 20 }, { stat: "tournaments", need: 1 }, { stat: "bosses", need: 1 }] },
+  { id: "encore", reward: "sono", goals: [{ stat: "fights", need: 60 }, { stat: "kos", need: 250 }, { stat: "forms", need: 30 }] },
+  { id: "cranes", reward: "paper", goals: [{ stat: "fights", need: 80 }, { stat: "forms", need: 40 }, { stat: "tournaments", need: 1 }, { stat: "bosses", need: 1 }] },
 ];
 
 const KEY = "npc-arena-quests";

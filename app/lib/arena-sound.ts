@@ -235,6 +235,20 @@ const CAST: Record<Power, Voice> = {
     s.noise(1800 * p, 260 * p, 0.4 * len, 0.35, { type: "bandpass", q: 5, attack: 0.15 * len });
     s.tone(180 * p, 90 * p, 0.35 * len, 0.25, { type: "sine", delay: 0.12 * len });
   },
+  // Overtone: a kick drum, a stab of a chord through a warm filter and a short riser on top
+  sono: (s, p, len, v) => {
+    s.tone(150 * p, 42, 0.22 * len, 0.75, { type: "sine" });
+    const chord = v === 0 ? [220, 277, 330] : v === 1 ? [196, 247, 294] : [247, 311, 370];
+    chord.forEach((n, i) => s.tone(n * p, n * p, 0.32 * len, 0.1, { type: "sawtooth", lp: 1800, delay: 0.04 * len + i * 0.008, detune: i * 6 }));
+    s.tone(440 * p, 1760 * p, 0.2 * len, 0.06, { type: "square", lp: 4000, delay: 0.18 * len });
+    s.noise(9000, 7000, 0.04, 0.2, { type: "highpass", delay: 0.14 * len });
+  },
+  // Vellum: paper rustling, a crisp fold snapping flat and a soft plucked note
+  paper: (s, p, len, v) => {
+    for (let i = 0; i < 4; i++) s.noise(5200 * p, 3800 * p, 0.035, 0.22, { type: "bandpass", q: 3, delay: i * 0.05 * len });
+    s.noise(7000, 4500, 0.025, 0.45, { type: "highpass", delay: 0.22 * len });
+    s.fm((v === 1 ? 587 : v === 2 ? 659 : 523) * p, 3, 1.5, 0.4 * len, 0.12, 0.24 * len);
+  },
 };
 
 const IMPACT: Record<Power, Voice> = {
@@ -286,6 +300,18 @@ const IMPACT: Record<Power, Voice> = {
     s.fm(520 * p, 1.5, 4, 0.2, 0.2);
     s.tone(130 * p, 50, 0.18, 0.5, { type: "sine" });
     for (let i = 0; i < 3; i++) s.noise(2400 + i * 900, 1200, 0.03, 0.25, { type: "bandpass", q: 4, delay: 0.03 + i * 0.04 });
+  },
+  // a kick and a clipped speaker crackle
+  sono: (s, p) => {
+    s.tone(120 * p, 38, 0.18, 0.8, { type: "sine" });
+    s.tone(80 * p, 60, 0.08, 0.25, { type: "square", lp: 1200 });
+    s.noise(3200, 1800, 0.06, 0.4, { type: "bandpass", q: 3 });
+  },
+  // a sharp paper slice and a flutter
+  paper: (s, p) => {
+    s.noise(8000 * p, 5000, 0.04, 0.55, { type: "highpass", q: 2 });
+    s.noise(3000, 2200, 0.08, 0.25, { type: "bandpass", q: 2, delay: 0.04 });
+    s.tone(260 * p, 120, 0.06, 0.2, { type: "triangle" });
   },
 };
 

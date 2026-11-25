@@ -255,8 +255,9 @@ const FORM_LOOKS: Record<string, Look> = {
   "endless-night": F("total-eclipse", "hsl(250 50% 4%)", "hsl(44 100% 76%)", "star", true, 0, "starburst"),
 };
 // ---------- quest fighters ----------
-// Parallax (space), Hexizon (indie games), Halflife (gamma), Redline (speed) and Liminal (portals and matter). Their signature moves have hand-drawn looks of their own
-// (Spatial Cut, Spatial Prison, Gaster Blaster, Bone Barrage, Bone Zone, Jumbo Roundabout, Blaster Storm, Gamma Ray, Mach Rush, Ring Gate);
+// Parallax (space), Hexizon (indie games), Halflife (gamma), Redline (speed), Liminal (portals and matter), Overtone (sound) and Vellum (paper).
+// Their signature moves have hand-drawn looks of their own (Spatial Cut, Spatial Prison, Gaster Blaster, Bone Barrage, Bone Zone, Jumbo Roundabout,
+// Blaster Storm, Gamma Ray, Mach Rush, Ring Gate, Power Chord, Staccato, Wall of Sound, Crane Flock, Shuriken Fold, Scroll Unfurl);
 // the rest borrow a signature (`sig`) drawn in their own colours, like the form moves.
 Object.assign(LOOKS, {
   "spatial-cut": L("hsl(245 70% 8%)", "hsl(188 100% 74%)", "shard", true, 0, "slash"),
@@ -269,6 +270,12 @@ Object.assign(LOOKS, {
   "gamma-ray": L("hsl(80 100% 46%)", "hsl(62 100% 80%)", "spark", true, -80, "flare"),
   "mach-rush": L("hsl(356 90% 52%)", "hsl(44 100% 66%)", "spark", true, 0, "slash"),
   "ring-gate": L("hsl(318 100% 62%)", "hsl(176 100% 66%)", "ring", true, 0, "portal"),
+  "power-chord": L("hsl(32 100% 56%)", "hsl(48 100% 86%)", "ring", true, 0, "ripple"),
+  "staccato": L("hsl(38 100% 58%)", "hsl(48 100% 88%)", "glyph", true, 0, "sparks"),
+  "wall-of-sound": L("hsl(30 100% 54%)", "hsl(48 100% 86%)", "ring", true, 0, "ripple"),
+  "crane-flock": L("hsl(42 40% 93%)", "hsl(352 85% 56%)", "leaf", false, 60, "slash"),
+  "shuriken-fold": L("hsl(42 40% 93%)", "hsl(352 85% 56%)", "leaf", false, 100, "slash"),
+  "scroll-unfurl": L("hsl(42 45% 90%)", "hsl(352 85% 54%)", "leaf", false, 60, "slash"),
 } satisfies Record<string, Look>);
 const QUEST_LOOKS: Record<string, Look> = {
   // Parallax
@@ -341,6 +348,32 @@ const QUEST_LOOKS: Record<string, Look> = {
   "thousand-doors": F("light-lances", "hsl(300 90% 40%)", "hsl(176 100% 70%)", "ring", true, 200, "portal"),
   "matter-collapse": F("singularity", "hsl(280 70% 16%)", "hsl(176 100% 66%)", "chunk", false, 0, "implode"),
   "unmaking-gate": F("ring-gate", "hsl(300 90% 40%)", "hsl(176 100% 66%)", "ring", true, 0, "portal"),
+  // Overtone
+  "beat-jab": F("flash-jab", "hsl(36 100% 56%)", "hsl(48 100% 86%)", "ring", true, 0, "ripple"),
+  "downbeat": F("boulder-fist", "hsl(26 100% 48%)", "hsl(48 100% 80%)", "ring", true, 0, "crater"),
+  "bass-drop": F("psychic-lift", "hsl(24 100% 46%)", "hsl(48 100% 80%)", "ring", true, 0, "crater"),
+  "high-note": F("sun-flare", "hsl(44 100% 60%)", "hsl(0 0% 100%)", "star", true, 0, "starburst"),
+  "echo-step": F("warp-kick", "hsl(34 100% 54%)", "hsl(48 100% 88%)", "ring", true, 0, "ripple"),
+  "dead-air": F("night-veil", "hsl(220 30% 14%)", "hsl(36 100% 70%)", "ring", true, 0),
+  "drumroll": F("light-lances", "hsl(30 100% 54%)", "hsl(48 100% 84%)", "ring", true, 200, "ripple"),
+  "feedback": F("magnet-pull", "hsl(20 100% 50%)", "hsl(48 100% 80%)", "ring", true, 0, "implode"),
+  "crescendo-rush": F("blink-barrage", "hsl(36 100% 52%)", "hsl(48 100% 86%)", "ring", true, 0, "ripple"),
+  "final-chorus": F("wall-of-sound", "hsl(8 100% 50%)", "hsl(0 0% 100%)", "ring", true, 0, "ripple"),
+  "mosh-pit": F("singularity", "hsl(0 70% 20%)", "hsl(8 100% 64%)", "ring", true, 0, "implode"),
+  "earsplitter": F("mind-crush", "hsl(8 100% 48%)", "hsl(36 100% 70%)", "ring", true, 0, "ripple"),
+  // Vellum
+  "papercut": F("shade-slash", "hsl(42 40% 92%)", "hsl(352 85% 58%)", "leaf", false, 120, "slash"),
+  "folded-fan": F("gale-kick", "hsl(352 80% 54%)", "hsl(42 50% 94%)", "leaf", false, 80, "slash"),
+  "thousand-folds": F("rift-burst", "hsl(42 40% 90%)", "hsl(352 85% 58%)", "leaf", false, 100, "slash"),
+  "wrapping-seal": F("stasis-field", "hsl(42 40% 86%)", "hsl(352 85% 56%)", "leaf", false, 40),
+  "paper-rain": F("crane-flock", "hsl(42 40% 92%)", "hsl(352 85% 60%)", "leaf", false, 200, "slash"),
+  "folding-spire": F("glacier-spike", "hsl(42 35% 88%)", "hsl(352 85% 58%)", "leaf", false, 300, "shatter"),
+  "paper-plane": F("blink-barrage", "hsl(42 40% 94%)", "hsl(352 85% 58%)", "leaf", false, 60, "slash"),
+  "paper-tether": F("magnet-pull", "hsl(42 40% 90%)", "hsl(352 85% 58%)", "leaf", false, 0, "implode"),
+  "refold": F("mend", "hsl(42 50% 92%)", "hsl(352 85% 62%)", "leaf", false, -100),
+  "thousand-cranes": F("crane-flock", "hsl(0 0% 12%)", "hsl(352 100% 58%)", "leaf", false, 200, "slash"),
+  "ink-flood": F("miasma-cloud", "hsl(0 0% 6%)", "hsl(352 100% 56%)", "smoke", false, -40, "splat"),
+  "black-crane": F("crane-flock", "hsl(0 0% 10%)", "hsl(352 100% 60%)", "leaf", false, 100, "slash"),
 };
 for (const [id, lk] of Object.entries(QUEST_LOOKS)) FORM_LOOKS[id] = lk;
 for (const [id, lk] of Object.entries(FORM_LOOKS)) {
@@ -477,6 +510,39 @@ function star4(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, t
     ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
   }
   ctx.closePath();
+}
+
+/** An origami crane flying toward `ang`, kept upright either way. `flap` runs -1..1, wings down to wings up. */
+export function drawCrane(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, ang: number, flap: number, fill: string, edge: string) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(ang);
+  if (Math.cos(ang) < 0) ctx.scale(1, -1);
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.strokeStyle = edge;
+  ctx.lineWidth = Math.max(1, r * 0.09);
+  const wing = (dx: number, k: number) => {
+    ctx.beginPath();
+    ctx.moveTo((-0.3 + dx) * r, 0);
+    ctx.lineTo((0.35 + dx) * r, 0);
+    ctx.lineTo((-0.05 + dx) * r, -1.15 * r * flap * k);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  };
+  ctx.fillStyle = fill;
+  ctx.globalAlpha *= 0.75;
+  wing(0.12, 0.85);
+  ctx.globalAlpha /= 0.75;
+  ctx.beginPath();
+  for (const [px, py] of [[-1.25, -0.55], [-0.35, 0.05], [0, 0.28], [0.35, 0.05], [1.05, -0.62], [1.34, -0.46], [0.95, -0.48], [0.2, -0.08], [-0.2, -0.08]] as const) ctx.lineTo(px * r, py * r);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -0.08 * r); ctx.lineTo(0, 0.28 * r); ctx.stroke();
+  wing(0, 1);
+  ctx.restore();
 }
 
 function dial(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, rim: string, hand: string, ha: number, hb: number, w: number) {
@@ -1657,6 +1723,57 @@ export function drawShotLook(ctx: CanvasRenderingContext2D, id: string, p: Shot,
       for (const ex of [-r * 1.6, r * 1.6]) for (const sd of [-1, 1]) { ctx.beginPath(); ctx.arc(ex, sd * r * 0.42, r * 0.48, 0, TAU); ctx.fill(); }
       break;
     }
+    case "power-chord": {
+      // a chord made visible: three arcs of sound rolling forward, the front one brightest
+      ctx.globalCompositeOperation = "lighter";
+      ctx.translate(p.x, p.y);
+      ctx.scale(dir, 1);
+      glow(ctx, 0, 0, r * 1.8, a, 0.3);
+      for (let i = 0; i < 3; i++) {
+        const rr = r * (1.4 - i * 0.28) * (1 + 0.06 * Math.sin(t * 30 + i));
+        ctx.strokeStyle = i === 0 ? b : al(a, 0.9 - i * 0.25);
+        ctx.lineWidth = r * (0.32 - i * 0.07);
+        ctx.beginPath(); ctx.arc(-i * r * 0.6 - rr, 0, rr, -0.95, 0.95); ctx.stroke();
+      }
+      break;
+    }
+    case "staccato": {
+      // an eighth note bouncing along, a little glow behind it
+      ctx.globalCompositeOperation = "lighter";
+      glow(ctx, p.x - p.vx * 0.015, p.y - p.vy * 0.015, r * 2.4, a, 0.4);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.translate(p.x, p.y + Math.sin(t * 26 + p.rot * 3) * r * 0.3);
+      ctx.fillStyle = b;
+      ctx.strokeStyle = a;
+      ctx.lineWidth = Math.max(1.4, r * 0.24);
+      ctx.beginPath(); ctx.ellipse(0, r * 0.5, r * 0.75, r * 0.52, -0.4, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(r * 0.66, r * 0.4); ctx.lineTo(r * 0.66, -r * 1.7); ctx.quadraticCurveTo(r * 1.5, -r * 1.2, r * 1.35, -r * 0.5); ctx.stroke();
+      break;
+    }
+    case "crane-flock": {
+      // an origami crane, wings beating as it flies
+      ctx.globalCompositeOperation = "lighter";
+      glow(ctx, p.x, p.y, r * 1.8, b, 0.25);
+      ctx.globalCompositeOperation = "source-over";
+      drawCrane(ctx, p.x, p.y, r * 1.3, ang, Math.sin(t * 22 + p.rot * 5), a, b);
+      break;
+    }
+    case "shuriken-fold": {
+      // a folded paper star spinning flat, two colours of paper locked together
+      ctx.translate(p.x, p.y);
+      ctx.rotate(t * 18 * dir);
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "hsl(0 0% 10% / 0.7)";
+      ctx.lineWidth = Math.max(1, r * 0.1);
+      for (let i = 0; i < 4; i++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.fillStyle = i % 2 ? a : b;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(r * 0.45, -r * 0.45); ctx.lineTo(r * 1.45, r * 0.05); ctx.lineTo(r * 0.45, r * 0.05); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+      }
+      ctx.strokeRect(-r * 0.32, -r * 0.32, r * 0.64, r * 0.64);
+      break;
+    }
     case "ring-gate": {
       // a spinning ring door flying edge-on, its dark middle full of the other side's colour, little bits of matter dragged in its wake
       ctx.translate(p.x, p.y);
@@ -2205,6 +2322,67 @@ export function drawBeamLook(ctx: CanvasRenderingContext2D, id: string, bm: Beam
       ctx.strokeStyle = "white";
       ctx.lineWidth = Math.max(1, w * 0.06);
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len + w, 0); ctx.stroke();
+      break;
+    }
+    case "wall-of-sound": {
+      // a speaker cone at the hand and arcs of sound marching down the beam
+      ctx.globalCompositeOperation = "lighter";
+      const gr = ctx.createLinearGradient(0, -w, 0, w);
+      gr.addColorStop(0, al(a, 0));
+      gr.addColorStop(0.5, al(a, 0.45));
+      gr.addColorStop(1, al(a, 0));
+      ctx.fillStyle = gr;
+      ctx.fillRect(0, -w, len, w * 2);
+      const gap = Math.max(14, w * 1.4);
+      for (let x = (t * 700) % gap; x < len; x += gap) {
+        const k = x / len, rr = w * (0.8 + k * 0.9);
+        ctx.strokeStyle = al(Math.floor(x / gap) % 2 ? b : a, 0.9 - k * 0.5);
+        ctx.lineWidth = Math.max(1.5, w * 0.22);
+        ctx.beginPath(); ctx.arc(x - rr, 0, rr, -0.9, 0.9); ctx.stroke();
+      }
+      ctx.strokeStyle = "hsl(0 0% 100% / 0.8)";
+      ctx.lineWidth = Math.max(1, w * 0.12);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len, 0); ctx.stroke();
+      glow(ctx, 0, 0, w * 2.2, b, 0.8);
+      ctx.globalCompositeOperation = "source-over";
+      for (const [k, c] of [[1.1, "hsl(220 14% 12%)"], [0.75, a], [0.32, "hsl(220 14% 12%)"]] as const) {
+        ctx.fillStyle = c;
+        ctx.beginPath(); ctx.ellipse(0, 0, w * k * 0.45, w * k * (1 + 0.08 * Math.sin(t * 50)), 0, 0, TAU); ctx.fill();
+      }
+      break;
+    }
+    case "scroll-unfurl": {
+      // a paper scroll rolling out from the hand, inked as it goes, its roller at the far end
+      const top = (x: number) => -w * 0.55 + Math.sin(x * 0.06 + t * 18) * w * 0.08;
+      ctx.fillStyle = a;
+      ctx.beginPath();
+      ctx.moveTo(0, top(0));
+      for (let x = 0; x <= len; x += 12) ctx.lineTo(x, top(x));
+      ctx.lineTo(len, top(len) + w * 1.1);
+      for (let x = len; x >= 0; x -= 12) ctx.lineTo(x, top(x) + w * 1.1);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = "hsl(20 30% 30% / 0.6)";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      // brush strokes of ink down the paper
+      ctx.strokeStyle = "hsl(0 0% 8% / 0.75)";
+      ctx.lineWidth = Math.max(1.2, w * 0.12);
+      for (let x = w; x < len - w; x += w * 1.3) {
+        const n = noise(x, 1);
+        ctx.beginPath(); ctx.moveTo(x, top(x) + w * 0.3); ctx.lineTo(x + w * 0.1, top(x) + w * (0.55 + n * 0.3)); ctx.stroke();
+        if (n > 0.5) { ctx.beginPath(); ctx.moveTo(x - w * 0.2, top(x) + w * 0.45); ctx.lineTo(x + w * 0.3, top(x) + w * 0.42); ctx.stroke(); }
+      }
+      // a red seal near the end
+      ctx.strokeStyle = b;
+      ctx.lineWidth = Math.max(1.2, w * 0.12);
+      ctx.strokeRect(len - w * 1.6, top(len) + w * 0.25, w * 0.6, w * 0.6);
+      // the roller
+      ctx.fillStyle = "hsl(20 40% 22%)";
+      ctx.fillRect(len - w * 0.2, top(len) - w * 0.25, w * 0.4, w * 1.6);
+      ctx.fillStyle = b;
+      ctx.fillRect(len - w * 0.28, top(len) - w * 0.4, w * 0.56, w * 0.2);
+      ctx.fillRect(len - w * 0.28, top(len) + w * 1.3, w * 0.56, w * 0.2);
       break;
     }
     case "gamma-ray": {

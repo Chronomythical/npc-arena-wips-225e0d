@@ -111,6 +111,10 @@ const QUEST_STANCE: Partial<Record<Power, Pose>> = {
   velo: { t: 0.42, aF1: 1.05, aF2: 2.2, aB1: -1.5, aB2: -1.2, lF1: 0.85, lF2: -0.2, lB1: -0.7, lB2: -0.55 },
   // Liminal: upright and open, both hands raised either side as if holding two doors ajar
   portal: { t: 0.02, aF1: 1.9, aF2: 2.6, aB1: -1.9, aB2: -2.6, lF1: 0.32, lF2: 0.02, lB1: -0.32, lB2: -0.04 },
+  // Overtone: front fist out on the beat, back hand pressed to his headphones
+  sono: { t: 0.1, aF1: 1.25, aF2: 1.95, aB1: 1.95, aB2: 3.55, lF1: 0.5, lF2: 0.05, lB1: -0.42, lB2: -0.18 },
+  // Vellum: light as paper, a fan held out in front, the other arm swept back, back toe pointed
+  paper: { t: 0.04, aF1: 1.7, aF2: 2.2, aB1: -1.3, aB2: -0.6, lF1: 0.38, lF2: 0.0, lB1: -0.2, lB2: -0.35 },
 };
 const pairHash = (a: Power, b: Power) => [a, b].sort().join("+").split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 /** The rest stance this fighter stands in. */
@@ -135,8 +139,9 @@ function idlePose(f: Fighter, gt: number): Pose {
     return { ...st, t: st.t + b * 0.025, aF2: st.aF2 + b * 0.12, aB2: st.aB2 + c * 0.12 };
   }
   if (QUEST_STANCE[f.def.id]) {
-    // Parallax drifts slowly, Hexizon bobs on the balls of his feet, Halflife heaves, Redline can't stand still, Liminal sways
-    const hz = ({ hexizon: 5.5, gamma: 2.6, velo: 9, portal: 1.4 } as Partial<Record<Power, number>>)[f.def.id] ?? 1.8;
+    // Parallax drifts slowly, Hexizon bobs on the balls of his feet, Halflife heaves, Redline can't stand still, Liminal sways,
+    // Overtone nods to a beat, Vellum drifts like a sheet on the air
+    const hz = ({ hexizon: 5.5, gamma: 2.6, velo: 9, portal: 1.4, sono: 7.5, paper: 1.2 } as Partial<Record<Power, number>>)[f.def.id] ?? 1.8;
     const b = Math.sin(gt * hz + f.key);
     return { ...st, t: st.t + b * 0.03, aF2: st.aF2 + b * 0.06, aB2: st.aB2 + b * 0.06, lF1: st.lF1 + b * 0.04, lB1: st.lB1 - b * 0.04 };
   }
@@ -242,6 +247,8 @@ const FX: Record<Power, { shape: PShape; add: boolean; grav: number }> = {
   gamma: { shape: "spark", add: true, grav: -120 },
   velo: { shape: "spark", add: true, grav: 0 },
   portal: { shape: "ring", add: true, grav: 0 },
+  sono: { shape: "ring", add: true, grav: 0 },
+  paper: { shape: "leaf", add: false, grav: 120 },
 };
 
 // ---------- Forms ----------

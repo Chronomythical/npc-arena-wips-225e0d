@@ -6,7 +6,10 @@
 // Halflife: a heavy body cracked with green light, a reactor core turning in his chest and radiation drifting off him.
 // Redline: red and gold, goggles, hair whipping back, chevrons on the chest and afterimages that trail him the faster he runs.
 // Liminal: a great ring door behind its shoulders, a small door at each hand, orbiting bits of matter and a keyhole for a face.
+// Overtone: headphones, an equalizer for a face, a speaker cone thumping in his chest and rings of sound pulsing off him on the beat.
+// Vellum: a paper body with fold creases, a red ink seal on the brow, a long scroll trailing from the shoulders and origami cranes circling.
 import type { Power } from "./fighters";
+import { drawCrane } from "./move-looks";
 import type { BossRig } from "./boss-designs";
 
 type Pt = { x: number; y: number };
@@ -478,6 +481,181 @@ function liminalFront(ctx: CanvasRenderingContext2D, r: BossRig, s: number, face
   ctx.restore();
 }
 
+// ---------- Overtone ----------
+
+/** The beat Overtone moves to: a sharp kick about twice a second. */
+const beatOf = (t: number) => Math.pow(Math.max(0, Math.sin(t * 7.5)), 8);
+
+function overtoneBack(ctx: CanvasRenderingContext2D, r: BossRig, s: number, t: number, alive: boolean, act: QuestAct | undefined, p: QuestPaint) {
+  if (!alive) return;
+  const cx = r.shoulder.x * 0.6 + r.hip.x * 0.4, cy = r.shoulder.y * 0.6 + r.hip.y * 0.4;
+  const loud = act ? (act.phase === "strike" ? 1 : 0.6) : 0.3;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "round";
+  // rings of sound pulsing off both sides of him, more of them and brighter when he plays
+  const n = 2 + Math.round(loud * 2);
+  for (let i = 0; i < n; i++) {
+    const q = (t * 1.2 + i / n) % 1;
+    const rr = (18 + q * 52) * s;
+    ctx.strokeStyle = al(i % 2 ? p.b : p.glow, (0.15 + loud * 0.45) * (1 - q));
+    ctx.lineWidth = (2.6 - q * 1.6) * s;
+    for (const sd of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, rr, sd > 0 ? -0.7 : Math.PI - 0.7, sd > 0 ? 0.7 : Math.PI + 0.7);
+      ctx.stroke();
+    }
+  }
+  if (p.nightmare) {
+    // black static crackling round him
+    for (let i = 0; i < 10; i++) {
+      const x = cx + (Math.sin(i * 7.1 + Math.floor(t * 20)) * 34) * s, y = cy + (Math.cos(i * 3.3 + Math.floor(t * 20) * 1.7) * 46) * s;
+      ctx.fillStyle = al(i % 2 ? p.glow : "hsl(0 0% 100%)", 0.6);
+      ctx.fillRect(x, y, 2.4 * s, 1.2 * s);
+    }
+  }
+  ctx.restore();
+}
+
+function overtoneFront(ctx: CanvasRenderingContext2D, r: BossRig, s: number, face: number, t: number, alive: boolean, act: QuestAct | undefined, p: QuestPaint) {
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const beat = alive ? beatOf(t) + (act && act.phase === "strike" ? 0.6 : 0) : 0;
+  // the speaker cone in his chest, thumping on the beat
+  const cx = r.shoulder.x * 0.6 + r.hip.x * 0.4 + face * 1.5 * s, cy = r.shoulder.y * 0.6 + r.hip.y * 0.4;
+  const R = 8 * s * (1 + beat * 0.12);
+  ctx.fillStyle = "hsl(220 14% 8%)";
+  ctx.beginPath(); ctx.arc(cx, cy, R + 1.5 * s, 0, TAU); ctx.fill();
+  ctx.strokeStyle = alive ? p.glow : al(p.glow, 0.35);
+  ctx.lineWidth = 1.6 * s;
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = al(p.glow, alive ? 0.6 : 0.2);
+  ctx.beginPath(); ctx.arc(cx, cy, R * 0.6, 0, TAU); ctx.stroke();
+  ctx.fillStyle = alive ? p.b : al(p.b, 0.3);
+  ctx.beginPath(); ctx.arc(cx, cy, R * 0.25, 0, TAU); ctx.fill();
+  if (alive) {
+    ctx.globalCompositeOperation = "lighter";
+    glowDot(ctx, cx, cy, R * 2, p.glow, 0.25 + beat * 0.4);
+    ctx.globalCompositeOperation = "source-over";
+  }
+  const h = r.head, hr = HEAD * s;
+  // headphones: a band over the top of the head and a cup over the ear
+  ctx.strokeStyle = "hsl(220 10% 22%)";
+  ctx.lineWidth = 3 * s;
+  ctx.beginPath(); ctx.arc(h.x, h.y, hr + 2.5 * s, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+  const ex = h.x - face * 1.5 * s, ey = h.y + 1 * s;
+  ctx.fillStyle = "hsl(220 10% 18%)";
+  ctx.beginPath(); ctx.ellipse(ex, ey, 4.4 * s, 6 * s, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = alive ? p.glow : al(p.glow, 0.35);
+  ctx.lineWidth = 1.5 * s;
+  ctx.stroke();
+  if (alive) {
+    // an equalizer for a face: bars at the front of the head jumping with the music
+    ctx.globalCompositeOperation = "lighter";
+    glowDot(ctx, h.x + face * 5 * s, h.y, 10 * s, p.glow, 0.35);
+    for (let i = 0; i < 4; i++) {
+      const bh = (2 + 5 * Math.abs(Math.sin(t * (6 + i * 1.7) + i * 2.1)) + beat * 2) * s;
+      ctx.fillStyle = i === 3 || p.nightmare ? p.b : p.glow;
+      ctx.fillRect(h.x + face * (2 + i * 2.4) * s - 0.8 * s, h.y + 2 * s - bh, 1.6 * s, bh);
+    }
+  }
+  ctx.restore();
+}
+
+// ---------- Vellum ----------
+
+function vellumCranes(ctx: CanvasRenderingContext2D, r: BossRig, s: number, t: number, alive: boolean, p: QuestPaint, near: boolean) {
+  if (!alive) return;
+  const cx = (r.hip.x + r.neck.x) / 2, cy = (r.hip.y + r.neck.y) / 2 - 18 * s;
+  for (let i = 0; i < 3; i++) {
+    const a = t * 0.9 + (i * TAU) / 3;
+    if ((Math.sin(a) > 0) !== near) continue;
+    const x = cx + Math.cos(a) * 42 * s, y = cy + Math.sin(a * 2 + i) * 12 * s - i * 8 * s;
+    // fly the way the orbit is going
+    const heading = Math.sin(a) > 0 ? Math.PI : 0;
+    ctx.globalAlpha = near ? 1 : 0.7;
+    drawCrane(ctx, x, y, (5 + (i % 2) * 1.5) * s, heading + Math.cos(a) * 0.2, Math.sin(t * 9 + i * 2), p.nightmare ? "hsl(0 0% 12%)" : "hsl(42 40% 95%)", p.glow);
+  }
+  ctx.globalAlpha = 1;
+}
+
+function vellumBack(ctx: CanvasRenderingContext2D, r: BossRig, s: number, face: number, t: number, alive: boolean, act: QuestAct | undefined, p: QuestPaint) {
+  ctx.save();
+  // a long paper scroll draped off the shoulders and streaming out behind, rippling on the air
+  const back = -face;
+  const lift = act && act.phase === "strike" ? 1.6 : 1;
+  const top: Pt[] = [];
+  const n = 9;
+  for (let i = 0; i <= n; i++) {
+    const k = i / n;
+    top.push({
+      x: r.neck.x + back * (k * 62 * s),
+      y: r.neck.y + 4 * s + k * 18 * s + Math.sin(t * 3.2 - k * 5) * k * 9 * s * lift - (alive ? 0 : -k * 20 * s),
+    });
+  }
+  const wdt = 7 * s;
+  ctx.fillStyle = p.nightmare ? "hsl(0 0% 10%)" : "hsl(42 45% 92%)";
+  ctx.beginPath();
+  top.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+  for (let i = n; i >= 0; i--) ctx.lineTo(top[i].x, top[i].y + wdt * (1 - (i / n) * 0.3));
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = al(p.glow, alive ? 0.7 : 0.3);
+  ctx.lineWidth = 1.2 * s;
+  ctx.stroke();
+  // ink marks along it
+  ctx.strokeStyle = p.nightmare ? al(p.glow, 0.8) : "hsl(0 0% 10% / 0.7)";
+  ctx.lineWidth = 1.4 * s;
+  for (let i = 2; i < n; i += 2) {
+    const q = top[i];
+    ctx.beginPath(); ctx.moveTo(q.x, q.y + 2 * s); ctx.lineTo(q.x + back * 1 * s, q.y + 5 * s); ctx.stroke();
+  }
+  vellumCranes(ctx, r, s, t, alive, p, false);
+  ctx.restore();
+}
+
+function vellumFront(ctx: CanvasRenderingContext2D, r: BossRig, s: number, face: number, t: number, alive: boolean, p: QuestPaint) {
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  // fold creases across the limbs: a little zigzag where the paper has been folded
+  ctx.strokeStyle = p.nightmare ? al(p.glow, 0.7) : "hsl(30 20% 55% / 0.8)";
+  ctx.lineWidth = 1.1 * s;
+  for (const [a, b] of [[r.hip, r.neck], [r.shoulder, r.eF], [r.eF, r.hF], [r.hip, r.kF], [r.kF, r.fF]] as const) {
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len, ux = dx / len, uy = dy / len;
+    ctx.beginPath();
+    ctx.moveTo(mx - nx * 3 * s - ux * 2 * s, my - ny * 3 * s - uy * 2 * s);
+    ctx.lineTo(mx + ux * 1.5 * s, my + uy * 1.5 * s);
+    ctx.lineTo(mx + nx * 3 * s - ux * 2 * s, my + ny * 3 * s - uy * 2 * s);
+    ctx.stroke();
+  }
+  const h = r.head;
+  // a red ink seal on the brow and one brushed eye
+  ctx.strokeStyle = alive ? p.glow : al(p.glow, 0.4);
+  ctx.lineWidth = 1.4 * s;
+  const sx = h.x + face * 1 * s, sy = h.y - 5.5 * s;
+  ctx.beginPath(); ctx.arc(sx, sy, 3 * s, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx - 1.4 * s, sy - 1 * s); ctx.lineTo(sx + 1.4 * s, sy + 1 * s); ctx.stroke();
+  if (alive) {
+    ctx.strokeStyle = p.nightmare ? p.glow : "hsl(0 0% 8%)";
+    ctx.lineWidth = 2 * s;
+    ctx.beginPath();
+    ctx.moveTo(h.x + face * 2 * s, h.y + 0.5 * s);
+    ctx.quadraticCurveTo(h.x + face * 5 * s, h.y - 1.5 * s, h.x + face * 8.5 * s, h.y + 0.2 * s);
+    ctx.stroke();
+    if (p.nightmare) {
+      ctx.globalCompositeOperation = "lighter";
+      glowDot(ctx, h.x + face * 5 * s, h.y, 8 * s, p.glow, 0.6);
+      ctx.globalCompositeOperation = "source-over";
+    }
+  }
+  vellumCranes(ctx, r, s, t, alive, p, true);
+  ctx.restore();
+}
+
 export function drawQuestDesign(
   ctx: CanvasRenderingContext2D, id: Power, layer: "back" | "front", r: BossRig, s: number, face: number, t: number,
   alive: boolean, act: QuestAct | undefined, p: QuestPaint, vx = 0,
@@ -487,4 +665,6 @@ export function drawQuestDesign(
   if (id === "gamma") return layer === "back" ? halflifeBack(ctx, r, s, t, alive, act, p) : halflifeFront(ctx, r, s, face, t, alive, p);
   if (id === "velo") return layer === "back" ? redlineBack(ctx, r, s, face, t, alive, act, p, vx) : redlineFront(ctx, r, s, face, t, alive, p, vx);
   if (id === "portal") return layer === "back" ? liminalBack(ctx, r, s, t, alive, act, p) : liminalFront(ctx, r, s, face, t, alive, act, p);
+  if (id === "sono") return layer === "back" ? overtoneBack(ctx, r, s, t, alive, act, p) : overtoneFront(ctx, r, s, face, t, alive, act, p);
+  if (id === "paper") return layer === "back" ? vellumBack(ctx, r, s, face, t, alive, act, p) : vellumFront(ctx, r, s, face, t, alive, p);
 }
