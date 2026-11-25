@@ -80,7 +80,10 @@
       "tryAgain": "Try again",
       "changePair": "Change pair",
       "storyComplete": "Story complete! The Black Sun has set.",
-      "nextChapter": "Next chapter"
+      "nextChapter": "Next chapter",
+      "dropped": "{{name}} drops to the losers bracket",
+      "knockedOut": "{{name}} is knocked out",
+      "resetNeeded": "{{name}} forces a reset match!"
     },
     "idle": "Press Start to begin the battle",
     "teams": {
@@ -103,7 +106,20 @@
       "tbd": "To be decided",
       "next": "Up next",
       "champion": "Champion",
-      "matchOf": "Match {{n}} of {{total}}"
+      "matchOf": "Match {{n}} of {{total}}",
+      "formatLabel": "Format",
+      "single": "Single elimination",
+      "double": "Double elimination",
+      "winners": "Winners bracket",
+      "losers": "Losers bracket",
+      "losersHint": "Lose once in the winners bracket and you drop down here. Lose again and you are out.",
+      "grand": "Grand final",
+      "grandHint": "The winners bracket champion meets the losers bracket champion. If the losers bracket fighter wins, a reset match decides the title.",
+      "winnersFinal": "Winners final",
+      "losersRound": "Round {{n}}",
+      "losersFinal": "Losers final",
+      "grandFinal": "Grand final",
+      "reset": "Reset match"
     },
     "idleTournament": "Press Start for the next match",
     "jugg": {

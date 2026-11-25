@@ -2,7 +2,7 @@ import { Text, type StringKey } from "~stencil/ui/strings";
 import { cn } from "~/lib/utils";
 import { defOf, type RosterId } from "~/lib/fighters";
 import { FighterDot } from "~/components/fighter-dot";
-import { champion, type Bracket, type Match, type MatchRef } from "~/lib/bracket";
+import { champion, roundsOf, type Bracket, type Match, type MatchRef } from "~/lib/bracket";
 
 const ROUND_KEY: Record<number, StringKey> = {
   1: "arena.bracket.final",
@@ -11,53 +11,120 @@ const ROUND_KEY: Record<number, StringKey> = {
   8: "arena.bracket.round16",
 };
 
-/** Single-elimination bracket: one column per round, the current match outlined. */
+const label = "mb-3 text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground";
+
+/**
+ * Single elimination: one column per round, then the champion.
+ * Double elimination: the winners bracket, the losers bracket, then the grand final
+ * (and its reset, once it is needed) beside the champion. The current match is outlined.
+ */
 export function BracketView({ bracket, current }: { bracket: Bracket; current: MatchRef | null }) {
   const champ = champion(bracket);
+  if (bracket.format === "single") {
+    return (
+      <Scroller>
+        {roundsOf(bracket, "winners").map((round, r) => (
+          <Column key={r} title={ROUND_KEY[round.length] ?? "arena.bracket.round16"} matches={round} current={current} />
+        ))}
+        <Champion id={champ} />
+      </Scroller>
+    );
+  }
+
+  const winners = roundsOf(bracket, "winners");
+  const losers = roundsOf(bracket, "losers");
+  const [grand, reset] = roundsOf(bracket, "grand").flat();
+  const resetShown = !!reset && !(reset.done && !reset.winner);
+  return (
+    <div className="flex flex-col gap-6" data-double-bracket>
+      <div>
+        <Text id="arena.bracket.winners" as="h3" className="mb-3 font-display text-lg text-foreground" />
+        <Scroller>
+          {winners.map((round, r) => (
+            <Column key={r} title={r === winners.length - 1 ? "arena.bracket.winnersFinal" : ROUND_KEY[round.length] ?? "arena.bracket.round16"} matches={round} current={current} />
+          ))}
+        </Scroller>
+      </div>
+      <div className="border-t border-border-subtle pt-6">
+        <Text id="arena.bracket.losers" as="h3" className="font-display text-lg text-foreground" />
+        <Text id="arena.bracket.losersHint" as="p" className="mb-3 mt-1 max-w-prose text-sm text-muted-foreground" />
+        <Scroller>
+          {losers.map((round, r) => (
+            <Column
+              key={r}
+              title={r === losers.length - 1 ? "arena.bracket.losersFinal" : "arena.bracket.losersRound"}
+              vars={{ n: r + 1 }}
+              matches={round}
+              current={current}
+            />
+          ))}
+        </Scroller>
+      </div>
+      <div className="border-t border-border-subtle pt-6">
+        <Text id="arena.bracket.grand" as="h3" className="font-display text-lg text-foreground" />
+        <Text id="arena.bracket.grandHint" as="p" className="mb-3 mt-1 max-w-prose text-sm text-muted-foreground" />
+        <Scroller>
+          {grand && <Column title="arena.bracket.grandFinal" matches={[grand]} current={current} />}
+          {reset && resetShown && <Column title="arena.bracket.reset" matches={[reset]} current={current} />}
+          <Champion id={champ} />
+        </Scroller>
+      </div>
+    </div>
+  );
+}
+
+function Scroller({ children }: { children: React.ReactNode }) {
   return (
     <div className="-mx-1 overflow-x-auto px-1 pb-2">
-      <div className="flex min-w-max gap-6">
-        {bracket.map((round, r) => (
-          <div key={r} className="flex w-48 flex-col">
-            <Text id={ROUND_KEY[round.length] ?? "arena.bracket.round16"} as="p" className="mb-3 text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground" />
-            <ol className="flex flex-1 flex-col justify-around gap-3">
-              {round.map((m, i) => (
-                <li key={i}>
-                  <MatchCard m={m} round={r} live={current?.r === r && current.i === i} />
-                </li>
-              ))}
-            </ol>
-          </div>
+      <div className="flex min-w-max gap-6">{children}</div>
+    </div>
+  );
+}
+
+function Column({ title, vars, matches, current }: { title: StringKey; vars?: Record<string, string | number>; matches: Match[]; current: MatchRef | null }) {
+  return (
+    <div className="flex w-48 flex-col">
+      <Text id={title} vars={vars} as="p" className={label} />
+      <ol className="flex flex-1 flex-col justify-around gap-3">
+        {matches.map((m) => (
+          <li key={m.id}>
+            <MatchCard m={m} live={current === m.id} />
+          </li>
         ))}
-        <div className="flex w-44 flex-col">
-          <Text id="arena.bracket.champion" as="p" className="mb-3 text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground" />
-          <div className="flex flex-1 items-center">
-            <div className={cn("w-full rounded-xl border-2 px-3 py-3", champ ? "border-border-strong bg-highlight text-highlight-foreground shadow-sm" : "border-dashed border-border bg-background")}>
-              {champ ? <Entrant id={champ} strong /> : <Text id="arena.bracket.tbd" className="text-sm text-muted-foreground" />}
-            </div>
-          </div>
+      </ol>
+    </div>
+  );
+}
+
+function Champion({ id }: { id: RosterId | null }) {
+  return (
+    <div className="flex w-44 flex-col">
+      <Text id="arena.bracket.champion" as="p" className={label} />
+      <div className="flex flex-1 items-center">
+        <div className={cn("w-full rounded-xl border-2 px-3 py-3", id ? "border-border-strong bg-highlight text-highlight-foreground shadow-sm" : "border-dashed border-border bg-background")}>
+          {id ? <Entrant id={id} strong /> : <Text id="arena.bracket.tbd" className="text-sm text-muted-foreground" />}
         </div>
       </div>
     </div>
   );
 }
 
-function MatchCard({ m, round, live }: { m: Match; round: number; live: boolean }) {
+function MatchCard({ m, live }: { m: Match; live: boolean }) {
   return (
     <div className={cn("rounded-xl border-2 bg-card", live ? "border-primary shadow-md" : "border-border")}>
       {live && <Text id="arena.bracket.next" as="p" className="border-b-2 border-primary bg-primary px-3 py-0.5 text-xs font-extrabold uppercase tracking-[0.1em] text-primary-foreground" />}
-      <Side id={m.a} winner={m.winner} round={round} />
+      <Side id={m.a} none={m.noA} winner={m.winner} />
       <div className="border-t border-border-subtle" />
-      <Side id={m.b} winner={m.winner} round={round} />
+      <Side id={m.b} none={m.noB} winner={m.winner} />
     </div>
   );
 }
 
-function Side({ id, winner, round }: { id: RosterId | null; winner: RosterId | null; round: number }) {
+function Side({ id, none, winner }: { id: RosterId | null; none: boolean; winner: RosterId | null }) {
   if (!id) {
     return (
       <div className="px-3 py-2">
-        <Text id={round === 0 ? "arena.bracket.bye" : "arena.bracket.tbd"} className="text-sm text-muted-foreground" />
+        <Text id={none ? "arena.bracket.bye" : "arena.bracket.tbd"} className="text-sm text-muted-foreground" />
       </div>
     );
   }

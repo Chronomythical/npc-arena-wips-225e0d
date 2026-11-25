@@ -1,18 +1,49 @@
 import type { RosterId } from "./fighters";
 
-/** One bracket slot. A null side in round one is a bye; in later rounds it is still to be decided. */
-export type Match = { a: RosterId | null; b: RosterId | null; winner: RosterId | null };
-/** Rounds in order, first round first; the last round holds the final. */
-export type Bracket = Match[][];
-export type MatchRef = { r: number; i: number };
+/**
+ * Tournament brackets, single or double elimination, as one list of matches.
+ * Each side of a match says where its fighter comes from: a seed, the winner of
+ * an earlier match, or (double elimination) the loser of an earlier match.
+ * Matches are stored in the order they are played, so every source comes first.
+ */
+export type Format = "single" | "double";
+export type Section = "winners" | "losers" | "grand";
+type Src = { seed: RosterId | null } | { win: number } | { lose: number };
 
-/** Shuffles the entrants into a single-elimination bracket, handing out byes when the count is not a power of two. */
-export function drawBracket(ids: RosterId[]): Bracket {
-  const pool = [...ids];
-  for (let i = pool.length - 1; i > 0; i--) {
+export type Match = {
+  id: number;
+  section: Section;
+  /** Round number inside its section, from 0. */
+  round: number;
+  from: [Src, Src];
+  a: RosterId | null;
+  b: RosterId | null;
+  /** This side will never be filled: a bye, or an empty branch further back. */
+  noA: boolean;
+  noB: boolean;
+  winner: RosterId | null;
+  loser: RosterId | null;
+  /** Decided: played, won by walkover, or empty on both sides. */
+  done: boolean;
+  /** Double elimination only: the second grand final, played if the losers-bracket fighter wins the first. */
+  reset?: boolean;
+};
+export type Bracket = { format: Format; matches: Match[] };
+/** A match's id. */
+export type MatchRef = number;
+
+function shuffle<T>(xs: T[]): T[] {
+  const a = [...xs];
+  for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
+  return a;
+}
+
+/** Shuffles the entrants into a bracket, handing out byes when the count is not a power of two. */
+export function drawBracket(ids: RosterId[], format: Format = "single"): Bracket {
+  const pool = shuffle(ids);
   let size = 2;
   while (size < pool.length) size *= 2;
   const first = size / 2;
@@ -20,61 +51,159 @@ export function drawBracket(ids: RosterId[]): Bracket {
   // spread the byes down the bracket so they never meet each other
   const byeAt = new Set<number>();
   for (let i = 0; i < byes; i++) byeAt.add(Math.floor((i * first) / byes));
-  const r0: Match[] = [];
+
+  const matches: Match[] = [];
+  const add = (section: Section, round: number, from: [Src, Src], reset?: boolean) => {
+    const id = matches.length;
+    matches.push({ id, section, round, from, a: null, b: null, noA: false, noB: false, winner: null, loser: null, done: false, ...(reset ? { reset } : {}) });
+    return id;
+  };
+
+  // Winners bracket, round one: the seeds.
   let k = 0;
+  const w: number[][] = [[]];
   for (let i = 0; i < first; i++) {
     const a = pool[k++] ?? null;
     const b = byeAt.has(i) ? null : pool[k++] ?? null;
-    r0.push({ a, b, winner: null });
+    w[0].push(add("winners", 0, [{ seed: a }, { seed: b }]));
   }
-  const rounds: Bracket = [r0];
-  for (let n = first / 2; n >= 1; n /= 2) rounds.push(Array.from({ length: n }, () => ({ a: null, b: null, winner: null })));
-  return settle(rounds);
+  const winnersRound = (r: number) => {
+    const prev = w[r - 1];
+    w[r] = [];
+    for (let i = 0; i < prev.length / 2; i++) w[r].push(add("winners", r, [{ win: prev[2 * i] }, { win: prev[2 * i + 1] }]));
+  };
+
+  if (format === "single") {
+    for (let r = 1; first >> r >= 1; r++) winnersRound(r);
+    return settle({ format, matches });
+  }
+
+  // Double elimination, in playing order: W1, L1, then each winners round followed by
+  // the losers round its losers drop into and the losers round that halves the field.
+  const l: number[][] = [];
+  if (first >= 2) {
+    l[0] = [];
+    for (let i = 0; i < first / 2; i++) l[0].push(add("losers", 0, [{ lose: w[0][2 * i] }, { lose: w[0][2 * i + 1] }]));
+  }
+  for (let r = 1; first >> r >= 1; r++) {
+    winnersRound(r);
+    // drop-in round: last losers round's winners meet this winners round's losers,
+    // in reverse order every other round so early opponents do not meet again at once
+    const prev = l[l.length - 1];
+    const drops = w[r];
+    const flip = r % 2 === 1;
+    const drop: number[] = [];
+    for (let i = 0; i < prev.length; i++) {
+      const d = drops[flip ? drops.length - 1 - i : i];
+      drop.push(add("losers", l.length, [{ win: prev[i] }, { lose: d }]));
+    }
+    l.push(drop);
+    // halving round, until one fighter is left in the losers bracket
+    if (drop.length > 1) {
+      const half: number[] = [];
+      for (let i = 0; i < drop.length / 2; i++) half.push(add("losers", l.length, [{ win: drop[2 * i] }, { win: drop[2 * i + 1] }]));
+      l.push(half);
+    }
+  }
+  const winnersFinal = w[w.length - 1][0];
+  const losersFinal = l[l.length - 1][0];
+  const grand = add("grand", 0, [{ win: winnersFinal }, { win: losersFinal }]);
+  add("grand", 1, [{ lose: grand }, { win: grand }], true);
+  return settle({ format, matches });
 }
 
-/** Sends every decided winner (and every bye) into its next-round slot. */
+/** Fills every side whose source is decided, and decides walkovers and empty matches. */
 function settle(b: Bracket): Bracket {
-  for (let r = 0; r < b.length; r++) {
-    b[r].forEach((m, i) => {
-      if (r === 0 && !m.winner && (m.a == null) !== (m.b == null)) m.winner = m.a ?? m.b;
-      if (m.winner && r + 1 < b.length) {
-        const nx = b[r + 1][i >> 1];
-        if (i % 2 === 0) nx.a = m.winner;
-        else nx.b = m.winner;
+  const ms = b.matches;
+  const out = (src: Src): { id: RosterId | null; none: boolean } => {
+    if ("seed" in src) return { id: src.seed, none: !src.seed };
+    const m = ms["win" in src ? src.win : src.lose];
+    if (!m.done) return { id: null, none: false };
+    const id = "win" in src ? m.winner : m.loser;
+    return { id, none: !id };
+  };
+  for (const m of ms) {
+    // a played match keeps its fighters and result
+    if (m.done && m.a && m.b) continue;
+    const A = out(m.from[0]);
+    const B = out(m.from[1]);
+    m.a = A.id;
+    m.b = B.id;
+    m.noA = A.none;
+    m.noB = B.none;
+    m.winner = null;
+    m.loser = null;
+    m.done = false;
+    if (m.reset) {
+      const gf = ms[(m.from[1] as { win: number }).win];
+      // the winners-bracket fighter took the grand final: no reset needed
+      if (gf.done && gf.winner === gf.a) {
+        m.a = m.b = null;
+        m.noA = m.noB = true;
       }
-    });
+    }
+    if (m.noA && m.noB) m.done = true;
+    else if (m.noA && m.b) {
+      m.winner = m.b;
+      m.done = true;
+    } else if (m.noB && m.a) {
+      m.winner = m.a;
+      m.done = true;
+    }
   }
   return b;
 }
 
 export function recordWinner(b: Bracket, at: MatchRef, winner: RosterId): Bracket {
-  const next = b.map((round) => round.map((m) => ({ ...m })));
-  const m = next[at.r]?.[at.i];
-  if (!m || m.winner || (winner !== m.a && winner !== m.b)) return b;
+  const matches = b.matches.map((m) => ({ ...m }));
+  const m = matches[at];
+  if (!m || m.done || !m.a || !m.b || (winner !== m.a && winner !== m.b)) return b;
   m.winner = winner;
-  return settle(next);
+  m.loser = winner === m.a ? m.b : m.a;
+  m.done = true;
+  return settle({ format: b.format, matches });
 }
 
-/** The next match with both fighters known and no result yet, earliest round first. */
+/** The next match with both fighters known and no result yet, in playing order. */
 export function nextMatch(b: Bracket): MatchRef | null {
-  for (let r = 0; r < b.length; r++) {
-    const i = b[r].findIndex((m) => m.a && m.b && !m.winner);
-    if (i >= 0) return { r, i };
-  }
-  return null;
+  return b.matches.find((m) => m.a && m.b && !m.done)?.id ?? null;
 }
 
-export const champion = (b: Bracket): RosterId | null => b[b.length - 1]?.[0]?.winner ?? null;
+export function champion(b: Bracket): RosterId | null {
+  const last = b.matches[b.matches.length - 1];
+  if (!last) return null;
+  if (b.format === "single") return last.winner;
+  const gf = b.matches[last.id - 1];
+  if (!last.done) return null;
+  return last.winner ?? gf.winner;
+}
 
 const isBout = (m: Match) => !!m.a && !!m.b;
 
-/** Real matches (byes left out): how many are done, and how many there are in all. */
+/**
+ * Real matches (byes left out): how many are done, and how many there are in all.
+ * Double elimination: everyone but the champion loses twice, one loss per match,
+ * and the champion loses once more if the grand final goes to a reset.
+ */
 export function progress(b: Bracket) {
-  const entrants = b[0].reduce((n, m) => n + (m.a ? 1 : 0) + (m.b ? 1 : 0), 0);
-  const played = b.flat().filter((m) => isBout(m) && m.winner).length;
-  return { played, total: Math.max(0, entrants - 1) };
+  const n = entrants(b).length;
+  const played = b.matches.filter((m) => isBout(m) && m.done).length;
+  if (b.format === "single") return { played, total: Math.max(0, n - 1) };
+  const last = b.matches[b.matches.length - 1];
+  return { played, total: Math.max(0, 2 * n - 2 + (last && isBout(last) ? 1 : 0)) };
 }
 
 export const started = (b: Bracket) => progress(b).played > 0;
 
-export const entrants = (b: Bracket): RosterId[] => b[0].flatMap((m) => [m.a, m.b]).filter((x): x is RosterId => !!x);
+export const entrants = (b: Bracket): RosterId[] =>
+  b.matches
+    .filter((m) => m.section === "winners" && m.round === 0)
+    .flatMap((m) => m.from.map((s) => ("seed" in s ? s.seed : null)))
+    .filter((x): x is RosterId => !!x);
+
+/** The matches of one section, grouped by round. */
+export function roundsOf(b: Bracket, section: Section): Match[][] {
+  const rounds: Match[][] = [];
+  for (const m of b.matches) if (m.section === section) (rounds[m.round] ??= []).push(m);
+  return rounds;
+}

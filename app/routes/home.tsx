@@ -25,7 +25,7 @@ import { W, H, TEAM_COLORS, newGame, step, drawScene, buildBackdrop, type Game, 
 import { arenaSound } from "~/lib/arena-sound";
 import { arenaMusic } from "~/lib/arena-music";
 import { MusicControl } from "~/components/music-control";
-import { drawBracket, recordWinner, nextMatch, champion, progress, started, entrants, type Bracket, type MatchRef } from "~/lib/bracket";
+import { drawBracket, recordWinner, nextMatch, champion, progress, started, entrants, type Bracket, type Format, type MatchRef } from "~/lib/bracket";
 import { BracketView } from "~/components/bracket-view";
 import { TitleScreen } from "~/components/title-screen";
 import { StoryPanel } from "~/components/story-panel";
@@ -50,6 +50,9 @@ const MODES: Mode[] = ["story", "duel", "ffa", "teams", "tournament", "juggernau
 const CHALLENGERS = 5;
 const JUGG_TEAMS = [...Array(CHALLENGERS).fill(0), 1] as number[];
 const TEAM_COUNTS = [2, 3, 4] as const;
+const FORMATS: Format[] = ["single", "double"];
+/** What a double-elimination result means for the fighter who lost it. */
+type Fallout = { name: string; key: "arena.winner.dropped" | "arena.winner.knockedOut" | "arena.winner.resetNeeded" };
 const TEAM_KEYS: StringKey[] = ["arena.teams.name0", "arena.teams.name1", "arena.teams.name2", "arena.teams.name3"];
 const HINTS: Record<Mode, StringKey> = {
   story: "arena.pick.storyHint",
@@ -86,6 +89,8 @@ export default function Home() {
   const [result, setResult] = useState<Result | null>(null);
   const [teamCount, setTeamCount] = useState<number>(2);
   const [bracket, setBracket] = useState<Bracket | null>(null);
+  const [format, setFormat] = useState<Format>("single");
+  const [fallout, setFallout] = useState<Fallout | null>(null);
   const [jugg, setJugg] = useState<RosterId>("pyro");
   // Story mode: each chapter's cleared count is read from this browser after the first render.
   const [clearedAll, setClearedAll] = useState<number[]>(() => CHAPTERS.map(() => 0));
@@ -169,6 +174,7 @@ export default function Home() {
   const titleBackAria = useString("title.backAria");
   const speedAria = useString("arena.controls.speedAria");
   const juggAria = useString("arena.jugg.label");
+  const formatAria = useString("arena.bracket.formatLabel");
   const teamNames = [useString("arena.teams.name0"), useString("arena.teams.name1"), useString("arena.teams.name2"), useString("arena.teams.name3")];
   const matchRef = useRef<MatchRef | null>(null);
 
@@ -198,6 +204,16 @@ export default function Home() {
       const id = g.winnerId;
       const next = bracket ? recordWinner(bracket, at, id) : bracket;
       setBracket(next);
+      // double elimination: say where the loser goes
+      const played = next?.format === "double" ? next.matches[at] : null;
+      if (played?.loser && !champion(next!)) {
+        const grandFinal = played.section === "grand" && !played.reset;
+        setFallout(
+          grandFinal
+            ? { name: defOf(played.winner!).name, key: "arena.winner.resetNeeded" }
+            : { name: defOf(played.loser).name, key: played.section === "winners" ? "arena.winner.dropped" : "arena.winner.knockedOut" },
+        );
+      } else setFallout(null);
       // the final just crowned a champion: that counts toward quests
       if (next && champion(next) && !(bracket && champion(bracket))) recordTournament();
     }
@@ -270,13 +286,13 @@ export default function Home() {
   // A fresh bracket whenever the picks change, unless a tournament is already under way.
   useEffect(() => {
     if (mode !== "tournament") return;
-    setBracket((cur) => (cur && started(cur) && !champion(cur) ? cur : validFor("tournament", picked.length) ? drawBracket(picked) : null));
+    setBracket((cur) => (cur && started(cur) && !champion(cur) ? cur : validFor("tournament", picked.length) ? drawBracket(picked, format) : null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, picked]);
+  }, [mode, picked, format]);
 
   // Idle line-up while waiting to start: the next pairing in a tournament, the picks otherwise.
-  const upA = upNext && bracket ? bracket[upNext.r][upNext.i].a : null;
-  const upB = upNext && bracket ? bracket[upNext.r][upNext.i].b : null;
+  const upA = upNext != null && bracket ? bracket.matches[upNext].a : null;
+  const upB = upNext != null && bracket ? bracket.matches[upNext].b : null;
   useEffect(() => {
     if (mode === "tournament") previewRef.current = newGame(upA && upB ? defsOf([upA, upB]) : [], true);
     else if (mode === "story") {
@@ -311,8 +327,8 @@ export default function Home() {
     }
     if (mode === "tournament") {
       const at = bracket ? nextMatch(bracket) : null;
-      const m = at && bracket ? bracket[at.r][at.i] : null;
-      if (!at || !m?.a || !m.b) return;
+      const m = at != null && bracket ? bracket.matches[at] : null;
+      if (at == null || !m?.a || !m.b) return;
       matchRef.current = at;
       begin(newGame(defsOf([m.a, m.b])));
       return;
@@ -329,13 +345,14 @@ export default function Home() {
     gameRef.current = null;
     matchRef.current = null;
     setResult(null);
+    setFallout(null);
     setSnap({ alive: [], feed: [] });
     setStatus("ready");
   };
 
   const newTournament = () => {
     restart();
-    setBracket(validFor("tournament", picked.length) ? drawBracket(picked) : null);
+    setBracket(validFor("tournament", picked.length) ? drawBracket(picked, format) : null);
   };
 
   const toggle = (id: RosterId) => {
@@ -359,7 +376,9 @@ export default function Home() {
     restart();
     setMode(m);
     // coming back to a tournament in progress keeps its bracket and its line-up
-    setPicked(m === "tournament" && bracket && started(bracket) && !champion(bracket) ? entrants(bracket) : defaultPicks(m, jugg));
+    const resume = m === "tournament" && bracket && started(bracket) && !champion(bracket);
+    setPicked(resume ? entrants(bracket) : defaultPicks(m, jugg));
+    if (resume) setFormat(bracket.format);
   };
 
   const enterFromTitle = (m: Mode) => {
@@ -498,6 +517,7 @@ export default function Home() {
                         teamColor={result?.team != null ? TEAM_COLORS[result.team] : null}
                         onAgain={start}
                         onNewTournament={newTournament}
+                        fallout={fallout}
                       />
                       )}
                     </div>
@@ -562,6 +582,16 @@ export default function Home() {
                 <Button size="sm" variant="ghost" disabled={locked || picked.length < 2} onClick={() => setPicked((cur) => shuffled(cur))}>
                   <Text id="arena.teams.shuffle" />
                 </Button>
+              </div>
+            )}
+            {mode === "tournament" && (
+              <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label={formatAria} data-format-picker>
+                <Text id="arena.bracket.formatLabel" className="text-sm text-muted-foreground" />
+                {FORMATS.map((f) => (
+                  <Button key={f} size="sm" variant={format === f ? "default" : "outline"} disabled={locked} aria-pressed={format === f} onClick={() => setFormat(f)}>
+                    <Text id={`arena.bracket.${f}` as StringKey} />
+                  </Button>
+                ))}
               </div>
             )}
             {mode === "juggernaut" && (
@@ -721,7 +751,7 @@ function StoryBanner({ chapter, stage, won, onRetry, onNext, onNextChapter, onBa
   );
 }
 
-function WinnerBanner({ mode, result, champ, teamName, teamColor, onAgain, onNewTournament }: {
+function WinnerBanner({ mode, result, champ, teamName, teamColor, onAgain, onNewTournament, fallout }: {
   mode: Mode;
   result: Result | null;
   champ: string | null;
@@ -729,6 +759,7 @@ function WinnerBanner({ mode, result, champ, teamName, teamColor, onAgain, onNew
   teamColor: string | null;
   onAgain: () => void;
   onNewTournament: () => void;
+  fallout: Fallout | null;
 }) {
   const title = "font-display text-3xl text-foreground";
   if (mode === "tournament") {
@@ -751,6 +782,7 @@ function WinnerBanner({ mode, result, champ, teamName, teamColor, onAgain, onNew
     return (
       <>
         <Text id="arena.winner.match" vars={{ name: result.name ?? "" }} as="p" className={title} />
+        {fallout && <Text id={fallout.key} vars={{ name: fallout.name }} as="p" className="mt-2 text-base text-foreground-secondary" />}
         <Button className="mt-4" onClick={onAgain}><Text id="arena.winner.nextMatch" /></Button>
       </>
     );
