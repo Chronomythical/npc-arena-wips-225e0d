@@ -243,6 +243,8 @@ const CUT_TIME = 2.7;
 const RAGE_POSE: Pose = { t: -0.22, aF1: 0.5, aF2: 0.2, aB1: -0.5, aB2: -0.2, lF1: 0.5, lF2: 0.22, lB1: -0.5, lB2: -0.22 };
 const ROAR_POSE: Pose = { ...RAGE_POSE, t: -0.3, ...ANIMS.raise.strike };
 const rageOf = (f?: Fighter | null) => f?.form ?? null;
+/** Nightmare Mode can't be stunned or frozen: those effects never take hold while it is on. */
+const shrugsOff = (f: Fighter, st?: StatusEffect) => (st === "stun" || st === "freeze") && rageOf(f)?.kind === "nightmare";
 /** The form a fighter breaks into now, if any. Forms only belong to the pure fighters, not to a hybrid or a boss carrying their power. */
 function nextForm(f: Fighter): Form | null {
   if (f.def.parents || f.def.boss) return null;
@@ -848,10 +850,14 @@ function landHit(g: Game, a: Fighter, o: Fighter, move: Move, power: Power, dir:
     a.think = 0;
   }
   // a juggernaut shakes off effects in a third of the time
-  if (move.status) o.status[move.status] = Math.max(o.status[move.status], g.t + (move.statusDur ?? 1) * (o.jugg ? 0.33 : 1));
-  const heavy = dmg >= 9 || move.lift != null || move.status === "stun" || move.status === "freeze";
+  // Nightmare Mode is immune to stuns and freezes: the effect never lands and never breaks its attack
+  const immune = shrugsOff(o, move.status);
+  if (immune) pop(g, c.x, c.y - 64 * o.scale, "immune", og?.b ?? o.def.glow, 15, 0.5);
+  else if (move.status) o.status[move.status] = Math.max(o.status[move.status], g.t + (move.statusDur ?? 1) * (o.jugg ? 0.33 : 1));
+  const locks = !immune && (move.status === "stun" || move.status === "freeze");
+  const heavy = dmg >= 9 || move.lift != null || locks;
   // a juggernaut shrugs off flinches: only a stun or freeze breaks its attack
-  const breaks = o.jugg ? move.status === "stun" || move.status === "freeze" : heavy;
+  const breaks = o.jugg ? locks : heavy;
   if (breaks && o.act) o.act = null;
   o.kneelT = 0;
   if (breaks) o.dashT = 0;
@@ -1346,7 +1352,7 @@ function usableMoves(g: Game, f: Fighter, target: Fighter) {
 function scoreMove(g: Game, f: Fighter, m: Move, target: Fighter) {
   const s = f.scale;
   let sc = m.dmg * (m.count ?? 1) * (m.kind === "zone" ? (m.dur ?? 3) * 0.6 : 1);
-  if (m.status && target.status[m.status] <= g.t) sc += 6;
+  if (m.status && target.status[m.status] <= g.t && !shrugsOff(target, m.status)) sc += 6;
   if (m.kind === "burst") {
     let n = 0;
     const c = center(f);
@@ -1503,6 +1509,8 @@ function startForm(g: Game, f: Fighter, fm: Form) {
   f.clashAir = false;
   f.hurtT = 0;
   f.vx = 0;
+  // breaking into Nightmare Mode throws off any stun or freeze already on the fighter
+  if (fm.kind === "nightmare") { f.status.stun = 0; f.status.freeze = 0; }
   // a crowded free for all gets a shorter cutscene so the fight keeps moving
   const crowd = g.fighters.filter((o) => o.alive).length > 4;
   g.cut = { key: f.key, t: 0, max: crowd ? 1.6 : fm.kind === "perfected" || fm.kind === "nightmare" ? CUT_TIME + 0.6 : CUT_TIME };
@@ -2142,7 +2150,7 @@ export function step(g: Game, dt: number) {
           g.particles.push({ x: oc.x, y: oc.y, vx: (c.x - oc.x) / life, vy: (c.y - oc.y) / life - 60, life, max: life, size: rand(4, 7), color: owner.def.glow, shape: "dot", grav: 0, add: true, rot: 0 });
         }
       }
-      if (z.move.status) o.status[z.move.status] = Math.max(o.status[z.move.status], g.t + (z.move.statusDur ?? 0.5));
+      if (z.move.status && !shrugsOff(o, z.move.status)) o.status[z.move.status] = Math.max(o.status[z.move.status], g.t + (z.move.statusDur ?? 0.5));
       if (z.move.pullIn) o.x += Math.sign(z.x - o.x) * Math.min(Math.abs(z.x - o.x), z.move.pullIn * dt);
     }
   }

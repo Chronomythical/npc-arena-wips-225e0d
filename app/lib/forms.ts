@@ -231,7 +231,7 @@ export const FORMS = {
 } as Record<Power, Form>;
 
 // ----- Nightmare Mode: the quest fighters' dark form -----
-// Darker body, a black-and-colour aura, 3 new moves, and a little of every passive.
+// Darker body, a black-and-colour aura, 3 new moves, a little of every passive, and it can't be stunned or frozen (enforced in the arena engine).
 const NIGHTMARE = { at: 0.4, regen: 2, drain: 0.12, guard: 0.85 };
 
 FORMS.spatio = {
