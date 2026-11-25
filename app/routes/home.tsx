@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import type { Route } from "./+types/home";
 import { Text, useString, type StringKey } from "~stencil/ui/strings";
 import { Button } from "~/components/ui/button";
@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~
 import { cn } from "~/lib/utils";
 import { FIGHTERS, defOf, type FighterDef, type Power, type RosterId } from "~/lib/fighters";
 import { rememberHybrid, useHybrids } from "~/lib/hybrids";
-import { recordFight, recordTournament, unlockedOf, useQuests } from "~/lib/quests";
+import { loadQuests, recordFight, recordTournament, unlockedOf, useQuests } from "~/lib/quests";
 import { FusionSheet } from "~/components/fusion-sheet";
 import { FighterDot } from "~/components/fighter-dot";
 import { W, H, TEAM_COLORS, newGame, step, drawScene, buildBackdrop, type Game, type FeedItem } from "~/lib/arena-engine";
@@ -456,6 +456,18 @@ export default function Home() {
     switchMode(m);
     setScreen("arena");
   };
+
+  // "Fight as …" on the Quests page: open a Duel with that claimed quest fighter already picked.
+  const [params, setParams] = useSearchParams();
+  const askedFighter = params.get("fighter");
+  useEffect(() => {
+    if (!askedFighter) return;
+    setParams({}, { replace: true, preventScrollReset: true });
+    if (!unlockedOf(loadQuests()).includes(askedFighter as Power)) return;
+    enterFromTitle("duel");
+    setPicked([askedFighter, askedFighter === "pyro" ? "cryo" : "pyro"]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [askedFighter]);
 
   const fighting = status === "running" || status === "paused";
   const chip = (id: RosterId) => (

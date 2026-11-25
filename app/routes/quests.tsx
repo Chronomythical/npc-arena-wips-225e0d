@@ -93,7 +93,7 @@ function QuestCard({ quest, n, stats, claimed, onClaim }: { quest: Quest; n: num
             )}
             <div className="mt-auto pt-2">
               {claimed ? (
-                <Button asChild variant="outline" className="w-full"><Link to="/"><Text id="quests.card.fight" vars={{ name: def.name }} /></Link></Button>
+                <Button asChild variant="outline" className="w-full"><Link to={`/?fighter=${def.id}`}><Text id="quests.card.fight" vars={{ name: def.name }} /></Link></Button>
               ) : (
                 <Button className="w-full" disabled={!ready} onClick={() => claimQuest(quest.id) && onClaim(def)}>
                   <Text id={ready ? "quests.card.claim" : "quests.card.locked"} />

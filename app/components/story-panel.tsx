@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { cn } from "~/lib/utils";
 import { DEF_BY_ID, FIGHTERS, type Power } from "~/lib/fighters";
+import { unlockedOf, useQuests } from "~/lib/quests";
 import { CHAPTERS, STAGES_PER_CHAPTER, canTeam, chapterOpen, enemySide, playerSide, type Pair } from "~/lib/story";
 
 const TITLE_KEYS: StringKey[] = ["story.chapterTitle", "story.ch2.title", "story.ch3.title", "story.ch4.title", "story.ch5.title", "story.ch6.title", "story.ch7.title"];
@@ -150,17 +151,20 @@ export function StoryPanel({ cleared, chapter, onChapter, stage, onStage, pair, 
   );
 }
 
+/** Picks one fighter: the 16 originals, then every quest fighter this browser has claimed. */
 export function FighterSelect({ value, label, disabled, onChange }: { value: Power; label: string; disabled: boolean; onChange: (p: Power) => void }) {
+  const earned = unlockedOf(useQuests());
+  const ids: Power[] = [...FIGHTERS.map((f) => f.id), ...earned];
   return (
     <Select value={value} onValueChange={(v) => onChange(v as Power)} disabled={disabled}>
       <SelectTrigger className="w-48" aria-label={label}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {FIGHTERS.map((f) => (
-          <SelectItem key={f.id} value={f.id}>
-            <span className="size-3 shrink-0 rounded-full border-2 border-foreground" style={{ background: f.color }} />
-            {DEF_BY_ID[f.id].name}
+        {ids.map((id) => (
+          <SelectItem key={id} value={id}>
+            <span className="size-3 shrink-0 rounded-full border-2 border-foreground" style={{ background: DEF_BY_ID[id].color }} />
+            {DEF_BY_ID[id].name}
           </SelectItem>
         ))}
       </SelectContent>

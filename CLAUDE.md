@@ -19,9 +19,9 @@ NPC Arena is a single-player game where you watch power-themed NPCs fight. No si
 - Fighters are data in `app/lib/fighters.ts` (16 originals, 4 moves each, plus quest fighters); move visuals in `lib/move-looks.ts`; forms in `lib/forms.ts`; entrances in `lib/spawn-intros.ts`.
 - Story: `lib/story.ts` (7 chapters x 10 stages) with bosses in `lib/bosses.ts`, drawn by `lib/boss-designs.ts`.
 - Hybrids/fusion: `hybridOf` in fighters.ts, saved via `lib/hybrids.ts`, fusion lab in `components/fusion-sheet.tsx`.
-- Fighters page (`/roster`) and Quests page (`/quests`, `lib/quests.ts`, unlock cutscenes in `components/quest-scenes.tsx`).
+- Fighters page (`/roster`) and Quests page (`/quests`, `lib/quests.ts`, unlock cutscenes in `components/quest-scenes.tsx`). Claiming a finished quest saves its id in `claimed`; `unlockedOf` is the one list of playable quest fighters, read by the arena chips, the Juggernaut picker, and `FighterSelect` (Story pair and Fusion lab). "Fight as X" links to `/?fighter=<id>`, which opens a Duel with that fighter picked.
 - Sound and music are synthesised live with Web Audio (`lib/arena-sound.ts`, `lib/arena-music.ts`), volume saved in localStorage.
-- Not built yet: boss unlocks, boss phases, Team Tournament, the last 3 quest fighters.
+- Not built yet: boss unlocks, boss phases, the last 3 quest fighters.
 Everything below this section is Stencil's platform documentation.
 
 ## Platform-managed — don't touch
