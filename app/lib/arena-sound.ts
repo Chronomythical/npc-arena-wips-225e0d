@@ -11,7 +11,11 @@ export type Sfx =
   | { k: "m1clash" }
   | { k: "ko" }
   | { k: "rage"; power: Power }
-  | { k: "intro"; power: Power };
+  | { k: "intro"; power: Power }
+  | { k: "ready" }
+  | { k: "fight" }
+  | { k: "cutin"; power: Power }
+  | { k: "final" };
 
 /** Stable 0..1 number per move id, so every move keeps its own pitch and variant. */
 function hash(s: string, salt = 0) {
@@ -435,6 +439,43 @@ export class ArenaSound {
           this.boom(s, 0.35);
           break;
         }
+        case "ready":
+          if (!this.gate("ready", 1)) break;
+          // a rising swell, then a drum hit as the fighters square up
+          s.tone(196, 392, 0.5, 0.22, { type: "sawtooth", lp: 1600, attack: 0.35 });
+          s.noise(300, 2600, 0.5, 0.22, { type: "bandpass", q: 1.4, attack: 0.4 });
+          s.tone(120, 48, 0.32, 0.8, { delay: 0.45 });
+          s.noise(900, 120, 0.25, 0.4, { type: "lowpass", delay: 0.45 });
+          break;
+        case "fight":
+          if (!this.gate("fight", 1)) break;
+          // the bell: a heavy hit, a bright stab and a ringing crash
+          this.boom(s, 1);
+          [523, 659, 784, 1047].forEach((n) => s.tone(n, n, 0.4, 0.1, { type: "square", lp: 3200, attack: 0.004 }));
+          s.noise(7000, 2500, 0.5, 0.35, { type: "highpass", attack: 0.004 });
+          s.fm(880, 3.5, 2.5, 0.9, 0.12, 0.02);
+          break;
+        case "cutin":
+          if (!this.gate("cutin", 0.5)) break;
+          // a blade being drawn as the band slashes across, then the fighter's own voice, slowed
+          this.swish(s, 1.8);
+          s.noise(1800, 9000, 0.2, 0.45, { type: "bandpass", q: 5, attack: 0.01 });
+          s.fm(1760, 1.41, 3, 0.7, 0.16, 0.03);
+          s.fm(2637, 1.41, 2, 0.5, 0.08, 0.06);
+          this.boom(s, 0.45);
+          s.gain = 0.6;
+          CAST[e.power](s, 0.72, 1.3, 2);
+          s.gain = 1;
+          break;
+        case "final":
+          if (!this.gate("final", 1)) break;
+          // the last K.O.: a deep drop that hangs through the slow motion, under a tolling bell
+          s.tone(72, 22, 1.7, 1, { attack: 0.01 });
+          s.noise(900, 40, 1.5, 0.6, { type: "lowpass", q: 0.8 });
+          s.noise(200, 6000, 0.35, 0.25, { type: "bandpass", q: 1.2, attack: 0.3 });
+          s.fm(392, 2.76, 4, 2.4, 0.2, 0.12);
+          s.fm(196, 2, 2, 2.6, 0.16, 0.12);
+          break;
         case "ko":
           if (!this.gate("ko", 0.2)) break;
           this.boom(s, 1.2);

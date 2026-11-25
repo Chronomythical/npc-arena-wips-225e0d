@@ -1,6 +1,7 @@
 // Side-view stickman fight engine for the arena canvas. Runs entirely in the browser.
 import { DEF_BY_ID, isQuester, juggernautOf, rosterIdOf, type Anim, type BossDesign, type FighterDef, type Move, type Power, type StatusEffect } from "./fighters";
 import type { Sfx } from "./arena-sound";
+import { drawMarks, drawFocus, drawBars, drawNameCards, drawCutIn, MARK_LIFE, CUTIN_LEN, type Mark, type CutIn, type Focus, type NameCard } from "./arena-cinema";
 import { INTROS, BOSS_INTROS, fusionIntro, INTRO_LEN, INTRO_ARRIVED, type IntroBurst, type IntroPose, type IntroSpec } from "./spawn-intros";
 import { LOOKS, setLookTint, drawFx, drawSpark, drawShotLook, drawBeamLook, drawEruptionLook, drawZoneLook, drawRushLook, drawAnnihilation, eruptionColors, type Fx, type PShape } from "./move-looks";
 import { drawBossDesign, type BossAct } from "./boss-designs";
@@ -388,6 +389,17 @@ export type Game = {
   /** Slow motion left, in real seconds (the final K.O.). */
   slow: number;
   impacts: Impact[];
+  /** Scars each element leaves on the floor. */
+  marks: Mark[];
+  /** A super move's cut-in across the screen, if one is playing. */
+  cutin: CutIn | null;
+  /** Fight time of the last cut-in, so they stay special. */
+  lastCutIn: number;
+  /** Letterbox bars, 0 (gone) to 1 (fully in). */
+  bars: number;
+  /** The anime impact frame: the whole picture inverts for an instant, in real seconds left. */
+  inv: number;
+  focus: Focus[];
   /** A silent attract-mode fight behind the title: no lifebars or callouts. */
   demo: boolean;
 };
@@ -410,7 +422,8 @@ export function newGame(ids: (Power | FighterDef)[], preview = false, teams?: nu
   if (teamMode) order.sort((a, b) => teams![a] - teams![b] || a - b);
   const slotOf = new Map(order.map((idx, slot) => [idx, slot]));
   // entrances run left to right, overlapping; a juggernaut arrives last, on its own
-  const gap = n <= 2 ? 0.5 : Math.min(0.16, 1.3 / (n - 1));
+  // a duel gives each fighter its own moment in the spotlight
+  const gap = n <= 2 ? 0.95 : n <= 4 ? 0.6 : Math.min(0.16, 1.3 / (n - 1));
   const lastSlot = Math.max(0, n - 1);
   const fighters: Fighter[] = ids.map((id, i) => {
     const isJugg = i === jugg;
@@ -457,6 +470,7 @@ export function newGame(ids: (Power | FighterDef)[], preview = false, teams?: nu
     intro: preview || n === 0 ? null : { t: 0, max: introEnd },
     realm: null, realmOut: null, annis: [], stopUntil: 0, eclipseUntil: 0, flash: 0,
     cam: { x: W / 2, y: H / 2, z: 1 }, punch: null, kick: { x: 0, y: 0 }, slow: 0, impacts: [], demo: false,
+    marks: [], cutin: null, lastCutIn: -99, bars: 0, inv: 0, focus: [],
   };
 }
 
@@ -527,6 +541,15 @@ function castFx(g: Game, f: Fighter, m: Move) {
   moveFx(g, m.id, false, at.x, at.y, f.facing, s, lk.castLife ?? 0.3, reach);
 }
 
+/** A scar on the floor in the element's own style; the oldest fade first when the floor gets crowded. */
+function mark(g: Game, power: Power, x: number, w: number) {
+  if (g.preview) return;
+  const d = DEF_BY_ID[power];
+  if (!d) return;
+  g.marks.push({ x, w: clamp(w, 16, 170), power, a: d.color, b: d.glow, life: MARK_LIFE, max: MARK_LIFE, seed: Math.random() * 100 });
+  if (g.marks.length > 26) g.marks.shift();
+}
+
 /** Queue a sound for the screen to play. A preview arena stays silent. */
 function sfx(g: Game, e: Sfx) {
   if (!g.preview && g.sfx.length < 48) g.sfx.push(e);
@@ -580,6 +603,31 @@ function stepCam(g: Game, dt: number) {
     // keep the floor near the bottom, but follow anyone launched high
     ty = Math.min(GROUND + 34 - H / (2 * tz), top + H / (2 * tz) - 20);
   }
+  // during the entrances the camera goes to whoever is arriving, then pulls back for READY
+  let follow = false;
+  if (g.intro && !g.preview && g.fighters.length <= 4) {
+    let star: Fighter | null = null;
+    for (const f of g.fighters) {
+      const u = introU(g, f);
+      if (u >= 0 && u < 0.92 && (!star || f.spawnAt > star.spawnAt)) star = f;
+    }
+    if (star) {
+      follow = true;
+      tz = g.duel ? 1.3 : 1.2;
+      tx = star.x;
+      ty = star.y - 70 * star.scale;
+    }
+  }
+  // the letterbox comes in for every cinematic beat and leaves for the fight
+  const cine = (!!g.intro && !g.preview && !g.demo) || g.slow > 0 || !!g.cutin || !!g.cut;
+  g.bars = clamp(g.bars + (cine ? dt * 3 : -dt * 2.2), 0, 1);
+  if (g.cutin) {
+    g.cutin.t += dt;
+    if (g.cutin.t >= g.cutin.max) g.cutin = null;
+  }
+  g.inv = Math.max(0, g.inv - dt);
+  for (const x of g.focus) x.t += dt;
+  g.focus = g.focus.filter((x) => x.t < x.max);
   const pu = g.punch;
   if (pu) {
     pu.t += dt;
@@ -593,7 +641,7 @@ function stepCam(g: Game, dt: number) {
       ty += (pu.y - ty) * 0.55 * ee;
     }
   }
-  const a = 1 - Math.exp(-dt * (pu ? 16 : 3.2));
+  const a = 1 - Math.exp(-dt * (pu ? 16 : follow ? 4.5 : 3.2));
   g.cam.x += (tx - g.cam.x) * a;
   g.cam.y += (ty - g.cam.y) * a;
   g.cam.z += (tz - g.cam.z) * a;
@@ -709,11 +757,23 @@ function knockOut(g: Game, f: Fighter, by: Fighter | null) {
   // the last one standing: slow motion and a hard push-in on the finishing blow
   const left = g.fighters.filter((o) => o.alive);
   const sides = g.teamMode ? new Set(left.map((o) => o.team)).size : left.length;
+  const few = g.fighters.length <= 4 && !g.preview && !g.demo;
   if (sides <= 1 && !g.preview) {
     g.slow = 1.1;
     g.flash = Math.max(g.flash, 0.16);
     punchIn(g, c.x, c.y, 0.32, 1.5);
-  } else punchIn(g, c.x, c.y, 0.14, 0.5);
+    sfx(g, { k: "final" });
+    if (!g.demo) {
+      g.inv = 0.11;
+      g.focus.push({ x: c.x, y: c.y, t: 0, max: 1.3, seed: Math.random() * 100, color: "hsl(0 0% 100%)" });
+    }
+  } else {
+    punchIn(g, c.x, c.y, 0.14, 0.5);
+    if (few) {
+      g.inv = 0.06;
+      g.focus.push({ x: c.x, y: c.y, t: 0, max: 0.5, seed: Math.random() * 100, color: "hsl(0 0% 100%)" });
+    }
+  }
 }
 
 function hurt(g: Game, f: Fighter, amount: number, by: Fighter | null) {
@@ -816,6 +876,7 @@ function landHit(g: Game, a: Fighter, o: Fighter, move: Move, power: Power, dir:
   g.hitstop = Math.max(g.hitstop, few ? (big ? 0.11 : dmg >= 6 ? 0.045 : 0.018) : big ? 0.05 : 0);
   if (big && few) punchIn(g, c.x, c.y, crit ? 0.18 : 0.11, 0.42);
   if (crit) g.flash = Math.max(g.flash, 0.07);
+  if (crit && few && !g.preview && !g.demo && g.focus.length < 2) g.focus.push({ x: c.x, y: c.y, t: 0, max: 0.35, seed: Math.random() * 100, color: cb });
   if (move.heal) a.hp = Math.min(a.maxHp, a.hp + move.heal);
   hurt(g, o, dmg, a);
   return true;
@@ -876,6 +937,12 @@ function fire(g: Game, f: Fighter, act: Action) {
     if (m.cd >= 9 && !g.preview) {
       g.flash = Math.max(g.flash, 0.06);
       punchIn(g, at.x, at.y, 0.1, 0.45);
+    }
+    // a super move: when only a few are fighting, it gets its own cut-in (one every few seconds, so each one lands)
+    if (m.cd >= 6 && !g.preview && !g.demo && !g.cutin && g.fighters.length <= 4 && g.t - g.lastCutIn > 7 && g.ending === 0) {
+      g.lastCutIn = g.t;
+      g.cutin = { key: f.key, name: f.def.name, move: m.name, a: ca, b: cb, t: 0, max: CUTIN_LEN, side: f.x < W / 2 ? 1 : -1 };
+      sfx(g, { k: "cutin", power });
     }
   }
   switch (m.kind) {
@@ -1005,6 +1072,7 @@ function fire(g: Game, f: Fighter, act: Action) {
         emitMove(g, m, power, c.x + Math.cos(a) * 20, c.y + Math.sin(a) * 20, 1, 1, { vx: Math.cos(a) * r * 2.6, vy: Math.sin(a) * r * 2.2, grav: 0 });
       }
       g.shake = Math.max(g.shake, 9);
+      if (f.y > GROUND - 80 * s) mark(g, power, f.x, Math.min(r * 0.8, 150));
       break;
     }
     case "dash":
@@ -1551,6 +1619,10 @@ function stepIntro(g: Game, dt: number) {
       // a hybrid arrives with both of its parents' voices
       if (f.def.parents && f.def.parents[1] !== f.def.id) sfx(g, { k: "intro", power: f.def.parents[1] });
       g.shake = Math.max(g.shake, sp.shake * (g.duel ? 1 : 0.6));
+      if (!g.preview && !g.demo && g.fighters.length <= 4) g.focus.push({ x: f.x, y: f.y - 55 * f.scale, t: 0, max: 0.45, seed: Math.random() * 100, color: f.def.glow });
+      // every arrival leaves its element's mark; a hybrid leaves both parents'
+      mark(g, f.def.parents?.[0] ?? f.def.id, f.x, 52 * f.scale);
+      if (f.def.parents && f.def.parents[1] !== f.def.parents[0]) mark(g, f.def.parents[1], f.x + 14 * f.scale, 40 * f.scale);
       if (sp.wave) g.waves.push({ x: f.x, y: f.y - 30 * f.scale, r: 120 * f.scale, life: 0.5, max: 0.5, a: sp.wave[0], b: sp.wave[1] });
     }
   }
@@ -1924,12 +1996,16 @@ export function step(g: Game, dt: number) {
     g.slow -= dt;
     dt *= 0.3;
   }
+  if (g.cutin && g.cutin.t < 0.5) dt *= 0.3;
   if (g.hitstop > 0) {
     g.hitstop -= dt;
     for (const x of g.impacts) x.life -= dt * 0.5;
     return;
   }
+  const t0 = g.t;
   g.t += dt;
+  if (t0 === 0) sfx(g, { k: "ready" });
+  if (t0 < 0.55 && g.t >= 0.55) sfx(g, { k: "fight" });
   g.flash = Math.max(0, g.flash - dt);
   stepRealm(g, dt);
   const alive = g.fighters.filter((f) => f.alive);
@@ -1980,7 +2056,10 @@ export function step(g: Game, dt: number) {
       p.life = 0;
       emitMove(g, p.move, p.power, p.x, GROUND - 4, 10, 220);
       if (LOOKS[p.move.id]?.hit) moveFx(g, p.move.id, true, p.x, GROUND - 8, Math.sign(p.vx) || 1, p.r / Math.max(4, p.move.size ?? 10), 0.35);
-      if (p.move.kind === "rain" || p.shape === "rock") g.shake = Math.max(g.shake, 4);
+      if (p.move.kind === "rain" || p.shape === "rock") {
+        g.shake = Math.max(g.shake, 4);
+        mark(g, p.power, p.x, 18 + p.r * 1.6);
+      }
     }
     if (p.life <= 0) continue;
     for (const f of g.fighters) {
@@ -2037,6 +2116,7 @@ export function step(g: Game, dt: number) {
         hit(g, owner, o, e.move, e.power, Math.sign(o.x - e.x) || 1);
       }
       for (let i = 0; i < 22; i++) emitMove(g, e.move, e.power, e.x + rand(-r, r) * 0.6, GROUND - rand(0, 160), 1, 120, { vy: -rand(200, 500) });
+      mark(g, e.power, e.x, r * 1.3 * (owner?.scale ?? 1));
       g.shake = Math.max(g.shake, 8);
     }
   }
@@ -2117,6 +2197,8 @@ function tickBits(g: Game, dt: number) {
   g.fx = g.fx.filter((x) => x.life > 0);
   for (const x of g.impacts) x.life -= dt;
   g.impacts = g.impacts.filter((x) => x.life > 0);
+  for (const m of g.marks) m.life -= dt;
+  if (g.marks.length) g.marks = g.marks.filter((m) => m.life > 0);
   for (const f of g.fighters) {
     for (const p of f.trail) p.life -= dt;
     if (f.trail.length) f.trail = f.trail.filter((p) => p.life > 0);
@@ -3793,6 +3875,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, g: Game, backdrop: HTML
   ctx.drawImage(backdrop, -12, -8, W + 24, H + 16);
   drawRealm(ctx, g);
   if (g.eclipseUntil > g.t) drawEclipse(ctx, g);
+  if (g.marks.length) drawMarks(ctx, g.marks, GROUND, g.t + (g.intro?.t ?? 0));
   for (const z of g.zones) { tintBy(g.fighters[z.owner]); drawZone(ctx, g, z); }
   for (const e of g.eruptions) if (!e.fired) { tintBy(g.fighters[e.owner]); drawEruption(ctx, e); }
   setLookTint(null);
@@ -3832,19 +3915,35 @@ export function drawScene(ctx: CanvasRenderingContext2D, g: Game, backdrop: HTML
     outlinedText(ctx, t.text, t.x, t.y, t.size, t.color);
   }
   ctx.globalAlpha = 1;
+  for (const x of g.focus) drawFocus(ctx, x);
   if (!g.duel && !g.demo && !cut) drawHeadBars(ctx, g);
   ctx.restore();
+  // the impact frame: one instant of the whole picture in negative
+  if (g.inv > 0 && !g.demo) {
+    ctx.save();
+    ctx.globalCompositeOperation = "difference";
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
   if (g.stopUntil > g.t) drawTimeStop(ctx, g);
   if (g.flash > 0) {
     ctx.fillStyle = `hsl(0 0% 100% / ${clamp(g.flash / 0.4, 0, 0.9)})`;
     ctx.fillRect(0, 0, W, H);
   }
+  if (!g.demo) drawBars(ctx, g.bars);
   if (hero && cut) {
     drawCutTitles(ctx, hero, ck);
     return;
   }
   if (g.demo) return;
+  if (g.cutin) {
+    const ci = g.cutin;
+    const f = g.fighters[ci.key];
+    if (f) drawCutIn(ctx, ci, (px, py, size) => portrait(ctx, g, f, px, py, size, ci.side), outlinedText);
+  }
   drawHud(ctx, g);
+  if (g.intro && !g.preview && g.fighters.length <= 4) drawNameCards(ctx, nameCards(g), outlinedText);
   if (!g.preview && !g.intro && g.t < 1.1) {
     const k = clamp(g.t / 0.2, 0, 1);
     outlinedText(ctx, g.t < 0.55 ? "READY" : "FIGHT!", W / 2, H / 2 - 40, 60 + 30 * k, g.t < 0.55 ? "white" : "hsl(46 100% 62%)");
@@ -3855,6 +3954,37 @@ export function drawScene(ctx: CanvasRenderingContext2D, g: Game, backdrop: HTML
     ctx.fillRect(0, 0, W, H);
     outlinedText(ctx, "K.O.", W / 2, H / 2 - 40, 70 + 40 * k, "hsl(0 85% 60%)");
   }
+}
+
+/** The fighter drawn large for a cut-in, its chest at (px, py), turned to face into the screen. */
+function portrait(ctx: CanvasRenderingContext2D, g: Game, f: Fighter, px: number, py: number, size: number, face: 1 | -1) {
+  const keep = f.facing;
+  f.facing = face;
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.scale(size / f.scale, size / f.scale);
+  ctx.translate(-f.x, -(f.y - 55 * f.scale));
+  try {
+    drawFighter(ctx, g, f, { shadow: false });
+  } finally {
+    f.facing = keep;
+    ctx.restore();
+  }
+}
+
+/** One card per fighter along the bottom, in the order they stand, each sliding in as its entrance lands. */
+function nameCards(g: Game): NameCard[] {
+  const it = g.intro!;
+  const fs = [...g.fighters].sort((a, b) => a.x - b.x);
+  const n = fs.length;
+  const w = Math.min(300, W / n - 24);
+  const fade = clamp((it.max - it.t) / 0.3, 0, 1);
+  return fs.map((f, i) => {
+    const sp = introOf(f.def);
+    const since = introU(g, f) - sp.hit;
+    const cx = n === 2 ? (i === 0 ? 40 + w / 2 : W - 40 - w / 2) : (W * (i + 0.5)) / n;
+    return { name: f.def.name, power: f.def.power, a: f.def.color, b: f.def.glow, cx, w, k: since <= 0 ? 0 : Math.min(1, since * 4) * fade };
+  });
 }
 
 /** A fighter during its entrance: moved, squashed, faded or tinted as its entrance says. */
