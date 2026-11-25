@@ -104,6 +104,12 @@ const QUEST_STANCE: Partial<Record<Power, Pose>> = {
   spatio: { t: 0.06, aF1: 1.5, aF2: 1.62, aB1: -0.6, aB2: 0.9, lF1: 0.45, lF2: 0.05, lB1: -0.4, lB2: -0.18 },
   // Hexizon: low monk's stance, the bone staff held across the body in both hands
   hexizon: { t: 0.22, aF1: 0.95, aF2: 1.9, aB1: 0.55, aB2: 1.45, lF1: 0.68, lF2: -0.05, lB1: -0.58, lB2: -0.42 },
+  // Halflife: square and heavy, fists low and wide like a wrestler, glowing core pushed out
+  gamma: { t: 0.1, aF1: 0.7, aF2: 1.3, aB1: -0.85, aB2: -1.4, lF1: 0.55, lF2: 0.08, lB1: -0.55, lB2: -0.2 },
+  // Redline: a sprinter on the blocks, leaning hard forward, one arm thrown back
+  velo: { t: 0.42, aF1: 1.05, aF2: 2.2, aB1: -1.5, aB2: -1.2, lF1: 0.85, lF2: -0.2, lB1: -0.7, lB2: -0.55 },
+  // Liminal: upright and open, both hands raised either side as if holding two doors ajar
+  portal: { t: 0.02, aF1: 1.9, aF2: 2.6, aB1: -1.9, aB2: -2.6, lF1: 0.32, lF2: 0.02, lB1: -0.32, lB2: -0.04 },
 };
 const pairHash = (a: Power, b: Power) => [a, b].sort().join("+").split("").reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 /** The rest stance this fighter stands in. */
@@ -128,8 +134,8 @@ function idlePose(f: Fighter, gt: number): Pose {
     return { ...st, t: st.t + b * 0.025, aF2: st.aF2 + b * 0.12, aB2: st.aB2 + c * 0.12 };
   }
   if (QUEST_STANCE[f.def.id]) {
-    // Parallax drifts slowly, Hexizon bobs on the balls of his feet
-    const hz = f.def.id === "hexizon" ? 5.5 : 1.8;
+    // Parallax drifts slowly, Hexizon bobs on the balls of his feet, Halflife heaves, Redline can't stand still, Liminal sways
+    const hz = ({ hexizon: 5.5, gamma: 2.6, velo: 9, portal: 1.4 } as Partial<Record<Power, number>>)[f.def.id] ?? 1.8;
     const b = Math.sin(gt * hz + f.key);
     return { ...st, t: st.t + b * 0.03, aF2: st.aF2 + b * 0.06, aB2: st.aB2 + b * 0.06, lF1: st.lF1 + b * 0.04, lB1: st.lB1 - b * 0.04 };
   }
@@ -232,6 +238,9 @@ const FX: Record<Power, { shape: PShape; add: boolean; grav: number }> = {
   shift: { shape: "dot", add: true, grav: 0 },
   spatio: { shape: "shard", add: true, grav: 0 },
   hexizon: { shape: "pixel", add: true, grav: -60 },
+  gamma: { shape: "spark", add: true, grav: -120 },
+  velo: { shape: "spark", add: true, grav: 0 },
+  portal: { shape: "ring", add: true, grav: 0 },
 };
 
 // ---------- Forms ----------
@@ -3029,7 +3038,7 @@ function drawFighterBody(ctx: CanvasRenderingContext2D, g: Game, f: Fighter, o: 
     const u = phase === "wind" ? at / Math.max(0.01, m.wind) : phase === "strike" ? (at - m.wind) / strikeLen : 1;
     questAct = { kind: m.kind, id: m.id, phase, u: clamp(u, 0, 1) };
   }
-  if (quest) drawQuestDesign(ctx, f.def.id, "back", bossPts, s, face, bt, f.alive, questAct, questPaint);
+  if (quest) drawQuestDesign(ctx, f.def.id, "back", bossPts, s, face, bt, f.alive, questAct, questPaint, f.vx);
 
   // scarf trailing from the neck (a boss wears its own design instead)
   const wave = Math.sin((g.t + (g.intro?.t ?? 0)) * 12 + f.key) * 4 * s;
@@ -3113,7 +3122,7 @@ function drawFighterBody(ctx: CanvasRenderingContext2D, g: Game, f: Fighter, o: 
     ctx.fill();
   }
   if (f.def.boss && !o.solid) drawBossDesign(ctx, f.def.boss, "front", bossPts, s, face, bt, f.alive, f.vx, bossAct);
-  if (quest) drawQuestDesign(ctx, f.def.id, "front", bossPts, s, face, bt, f.alive, questAct, questPaint);
+  if (quest) drawQuestDesign(ctx, f.def.id, "front", bossPts, s, face, bt, f.alive, questAct, questPaint, f.vx);
   ctx.globalAlpha = 1;
 
   if (!f.alive) return;

@@ -427,17 +427,17 @@
       },
       "gamma": {
         "title": "Critical Mass",
-        "reward": "Reward: a Gamma Radiation fighter",
+        "reward": "Earns Halflife, Gamma Radiation",
         "story": "Readings off the scale under the arena floor."
       },
       "speed": {
         "title": "Faster Than Sound",
-        "reward": "Reward: a superspeed fighter",
+        "reward": "Earns Redline, Superspeed",
         "story": "Afterimages in the replays that nobody can explain."
       },
       "portal": {
         "title": "Between Worlds",
-        "reward": "Reward: a Portal and Matter fighter",
+        "reward": "Earns Liminal, Portal and Matter Manipulation",
         "story": "A door keeps opening where no door should be."
       }
     },

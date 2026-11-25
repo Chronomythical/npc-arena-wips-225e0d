@@ -3,6 +3,9 @@
 // Hexizon: a pitch black stickman with a neon green outline, one glowing green eye, one black-green flare
 // for the other eye, and a large bone carried like a monk's staff.
 // Parallax: a body of deep space with glowing seams, a visor slit, and wireframe cubes of folded space orbiting him.
+// Halflife: a heavy body cracked with green light, a reactor core turning in his chest and radiation drifting off him.
+// Redline: red and gold, goggles, hair whipping back, chevrons on the chest and afterimages that trail him the faster he runs.
+// Liminal: a great ring door behind its shoulders, a small door at each hand, orbiting bits of matter and a keyhole for a face.
 import type { Power } from "./fighters";
 import type { BossRig } from "./boss-designs";
 
@@ -244,10 +247,244 @@ function parallaxFront(ctx: CanvasRenderingContext2D, r: BossRig, s: number, fac
   ctx.restore();
 }
 
+// ---------- Halflife ----------
+
+/** A jagged glowing crack along one bone of the body. */
+function crack(ctx: CanvasRenderingContext2D, a: Pt, b: Pt, s: number, seed: number) {
+  const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len, ny = dx / len;
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  for (let i = 1; i < 4; i++) {
+    const k = i / 4, o = Math.sin(seed * 7.3 + i * 2.1) * 2.6 * s;
+    ctx.lineTo(a.x + dx * k + nx * o, a.y + dy * k + ny * o);
+  }
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+}
+
+function halflifeBack(ctx: CanvasRenderingContext2D, r: BossRig, s: number, t: number, alive: boolean, act: QuestAct | undefined, p: QuestPaint) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  // a heavy radioactive haze around the whole body, pulsing like a heartbeat and flaring while he charges
+  const beat = Math.pow(Math.max(0, Math.sin(t * 3.2)), 6);
+  const charge = act ? (act.phase === "wind" ? act.u : act.phase === "strike" ? 1 - act.u * 0.5 : 0.3) : 0;
+  silhouette(ctx, r, s, (20 + beat * 6 + charge * 8) * s, al(p.glow, alive ? 0.12 + beat * 0.08 + charge * 0.12 : 0.04));
+  if (alive) {
+    // motes of radiation drifting up off his shoulders
+    for (let i = 0; i < 7; i++) {
+      const life = (t * 0.7 + i / 7) % 1;
+      const x = r.shoulder.x + Math.sin(i * 3.7 + t) * 18 * s;
+      const y = r.shoulder.y - life * 70 * s;
+      glowDot(ctx, x, y, (3 + (i % 3)) * s, i % 2 ? p.b : p.glow, 0.7 * (1 - life));
+    }
+  }
+  ctx.restore();
+}
+
+function halflifeFront(ctx: CanvasRenderingContext2D, r: BossRig, s: number, face: number, t: number, alive: boolean, p: QuestPaint) {
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  // cracks in his skin with the reactor showing through
+  const flick = 0.65 + 0.35 * Math.sin(t * 11);
+  ctx.strokeStyle = al(p.glow, alive ? flick : 0.2);
+  ctx.lineWidth = 1.8 * s;
+  [[r.hip, r.neck], [r.shoulder, r.eF], [r.eF, r.hF], [r.hip, r.kF], [r.kF, r.fF]].forEach(([a, b], i) => crack(ctx, a, b, s, i + 1));
+  // the core in his chest: a bright disc with three blades turning round it
+  const cx = r.shoulder.x * 0.6 + r.hip.x * 0.4 + face * 2 * s, cy = r.shoulder.y * 0.6 + r.hip.y * 0.4;
+  if (alive) {
+    glowDot(ctx, cx, cy, 16 * s, p.glow, 0.75);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "hsl(90 40% 4%)";
+    ctx.beginPath(); ctx.arc(cx, cy, 6.2 * s, 0, TAU); ctx.fill();
+    ctx.fillStyle = p.nightmare ? p.b : "hsl(70 100% 72%)";
+    const spin = t * 1.6;
+    for (let i = 0; i < 3; i++) {
+      const a0 = spin + (i * TAU) / 3;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, 5.6 * s, a0, a0 + 0.9);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(cx, cy, 1.4 * s, 0, TAU); ctx.fill();
+    // two hot slits for eyes
+    ctx.globalCompositeOperation = "lighter";
+    const ex = r.head.x + face * 4 * s, ey = r.head.y - 1.5 * s;
+    ctx.strokeStyle = p.nightmare ? p.b : "hsl(70 100% 80%)";
+    ctx.lineWidth = 2.2 * s;
+    for (const o of [-2.2, 3]) {
+      ctx.beginPath();
+      ctx.moveTo(ex + face * (o - 1.4) * s, ey - 0.6 * s);
+      ctx.lineTo(ex + face * (o + 1.4) * s, ey + 0.4 * s);
+      ctx.stroke();
+    }
+    glowDot(ctx, ex, ey, 8 * s, p.glow, 0.5);
+  }
+  ctx.restore();
+}
+
+// ---------- Redline ----------
+
+function redlineBack(ctx: CanvasRenderingContext2D, r: BossRig, s: number, face: number, t: number, alive: boolean, act: QuestAct | undefined, p: QuestPaint, vx: number) {
+  if (!alive) return;
+  ctx.save();
+  // afterimages left behind him: more and further apart the faster he goes, always a faint one at rest
+  const fast = Math.min(1, Math.abs(vx) / 260) + (act && (act.kind === "dash" || act.kind === "blink") && act.phase === "strike" ? 0.8 : 0);
+  const back = vx !== 0 ? -Math.sign(vx) : -face;
+  const n = 1 + Math.round(fast * 3);
+  for (let i = 1; i <= n; i++) {
+    ctx.save();
+    ctx.translate(back * i * (6 + fast * 16) * s, 0);
+    silhouette(ctx, r, s, 9 * s, al(i % 2 ? p.b : p.glow, (0.28 + fast * 0.2) / i));
+    ctx.restore();
+  }
+  // speed lines streaming off the body
+  ctx.globalCompositeOperation = "lighter";
+  ctx.lineCap = "round";
+  const lines = 3 + Math.round(fast * 5);
+  for (let i = 0; i < lines; i++) {
+    const y = r.head.y + ((i * 37 + Math.floor(t * 30) * 13) % 100) / 100 * (r.fF.y - r.head.y);
+    const len = (14 + fast * 40 + ((i * 17) % 11)) * s;
+    const x0 = r.hip.x + back * (8 + (i % 3) * 6) * s;
+    ctx.strokeStyle = al(i % 2 ? p.glow : "hsl(0 0% 100%)", 0.25 + fast * 0.4);
+    ctx.lineWidth = 1.5 * s;
+    ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + back * len, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function redlineFront(ctx: CanvasRenderingContext2D, r: BossRig, s: number, face: number, t: number, alive: boolean, p: QuestPaint, vx: number) {
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  // two gold chevrons down the chest, pointing the way he runs
+  const tx = r.neck.x + (r.hip.x - r.neck.x) * 0.3, ty = r.neck.y + (r.hip.y - r.neck.y) * 0.3;
+  ctx.strokeStyle = alive ? p.glow : al(p.glow, 0.4);
+  ctx.lineWidth = 2.2 * s;
+  for (let i = 0; i < 2; i++) {
+    const y = ty + i * 7 * s;
+    ctx.beginPath();
+    ctx.moveTo(tx - face * 4 * s, y - 4 * s);
+    ctx.lineTo(tx + face * 3 * s, y);
+    ctx.lineTo(tx - face * 4 * s, y + 4 * s);
+    ctx.stroke();
+  }
+  if (alive) {
+    const h = r.head;
+    // a streak of flame-coloured hair whipping back off the head, longer when he runs
+    const run = Math.min(1, Math.abs(vx) / 260);
+    const back = -face;
+    for (let i = 0; i < 3; i++) {
+      const wav = Math.sin(t * 22 + i * 1.7) * 2.5 * s;
+      ctx.strokeStyle = i === 1 ? p.b : p.glow;
+      ctx.lineWidth = (3.2 - i * 0.6) * s;
+      ctx.beginPath();
+      ctx.moveTo(h.x + back * 4 * s, h.y - (7 - i * 3) * s);
+      ctx.quadraticCurveTo(h.x + back * (14 + run * 8) * s, h.y - (10 - i * 4) * s + wav, h.x + back * (20 + run * 22 + i * 3) * s, h.y - (4 - i * 3) * s + wav);
+      ctx.stroke();
+    }
+    // goggles: a gold band with a bright lens toward the front
+    ctx.strokeStyle = "hsl(44 90% 50%)";
+    ctx.lineWidth = 4 * s;
+    ctx.beginPath();
+    ctx.moveTo(h.x - face * 9 * s, h.y - 2 * s);
+    ctx.lineTo(h.x + face * 10 * s, h.y - 2.6 * s);
+    ctx.stroke();
+    ctx.fillStyle = p.nightmare ? p.a : "hsl(190 100% 80%)";
+    ctx.beginPath(); ctx.ellipse(h.x + face * 5.5 * s, h.y - 2.4 * s, 3.4 * s, 2.4 * s, 0, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = "lighter";
+    glowDot(ctx, h.x + face * 5.5 * s, h.y - 2.4 * s, 8 * s, p.nightmare ? p.a : p.glow, 0.5);
+    // sparks crackling off his heels
+    if (Math.floor(t * 18) % 3 === 0) {
+      ctx.strokeStyle = al(p.glow, 0.9);
+      ctx.lineWidth = 1.4 * s;
+      for (const ft of [r.fF, r.fB]) {
+        ctx.beginPath();
+        ctx.moveTo(ft.x, ft.y - 2 * s);
+        ctx.lineTo(ft.x + back * 5 * s, ft.y - 6 * s);
+        ctx.lineTo(ft.x + back * 9 * s, ft.y - 3 * s);
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+}
+
+// ---------- Liminal ----------
+
+/** A ring-shaped door in the air, seen at an angle: a dark middle with a bright rim. */
+function doorRing(ctx: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number, rot: number, rim: string, inner: string, t: number, a = 1) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.fillStyle = al("hsl(270 50% 4%)", 0.85 * a);
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, TAU); ctx.fill();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.strokeStyle = al(inner, 0.7 * a);
+  ctx.lineWidth = Math.max(1, rx * 0.12);
+  ctx.beginPath(); ctx.ellipse(0, 0, rx * 0.78, ry * 0.78, 0, t * 3, t * 3 + 4.4); ctx.stroke();
+  ctx.strokeStyle = al(rim, a);
+  ctx.lineWidth = Math.max(1.2, rx * 0.2);
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, TAU); ctx.stroke();
+  ctx.restore();
+}
+
+function liminalBack(ctx: CanvasRenderingContext2D, r: BossRig, s: number, t: number, alive: boolean, act: QuestAct | undefined, p: QuestPaint) {
+  if (!alive) return;
+  // a great door hanging behind its shoulders, opening wider while it casts
+  const open = act ? (act.phase === "strike" ? 1.15 : 1.05) : 1;
+  const cx = r.neck.x, cy = r.neck.y - 4 * s;
+  ctx.save();
+  doorRing(ctx, cx, cy, 30 * s * open, 34 * s * open, Math.sin(t * 0.8) * 0.08, p.glow, p.b, t, 0.85);
+  ctx.restore();
+}
+
+function liminalFront(ctx: CanvasRenderingContext2D, r: BossRig, s: number, face: number, t: number, alive: boolean, act: QuestAct | undefined, p: QuestPaint) {
+  ctx.save();
+  // a small door at each hand, the front one tilting toward the target as it attacks
+  if (alive) {
+    const swell = act && act.phase === "strike" ? 1.5 : 1;
+    doorRing(ctx, r.hF.x + face * 4 * s, r.hF.y, 5 * s * swell, 9 * s * swell, face * 0.3, p.glow, p.b, t);
+    doorRing(ctx, r.hB.x - face * 4 * s, r.hB.y, 4 * s, 7.5 * s, -face * 0.3, p.b, p.glow, -t);
+  }
+  // bits of matter orbiting the body, coming apart and clicking back together
+  const cx = (r.hip.x + r.neck.x) / 2, cy = (r.hip.y + r.neck.y) / 2;
+  for (let i = 0; i < 6; i++) {
+    const a = t * 1.1 + (i * TAU) / 6;
+    const apart = 0.5 + 0.5 * Math.sin(t * 1.8 + i);
+    const d = (26 + apart * 14) * s;
+    const x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d * 0.55;
+    const z = (2.2 + (i % 2)) * s;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(t * 2 + i);
+    ctx.fillStyle = al(i % 2 ? p.glow : p.b, alive ? 0.9 : 0.3);
+    ctx.fillRect(-z, -z, z * 2, z * 2);
+    ctx.restore();
+  }
+  if (alive) {
+    // its face is a keyhole of light
+    const h = r.head, kx = h.x + face * 2 * s, ky = h.y - 2 * s;
+    ctx.globalCompositeOperation = "lighter";
+    glowDot(ctx, kx, ky + 2 * s, 10 * s, p.glow, 0.55);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = p.nightmare ? p.b : "hsl(0 0% 100%)";
+    ctx.beginPath(); ctx.arc(kx, ky, 2.8 * s, 0, TAU); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(kx - 1.4 * s, ky + 1 * s); ctx.lineTo(kx + 1.4 * s, ky + 1 * s); ctx.lineTo(kx + 2.6 * s, ky + 7 * s); ctx.lineTo(kx - 2.6 * s, ky + 7 * s); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
 export function drawQuestDesign(
   ctx: CanvasRenderingContext2D, id: Power, layer: "back" | "front", r: BossRig, s: number, face: number, t: number,
-  alive: boolean, act: QuestAct | undefined, p: QuestPaint,
+  alive: boolean, act: QuestAct | undefined, p: QuestPaint, vx = 0,
 ) {
   if (id === "hexizon") return layer === "back" ? hexizonBack(ctx, r, s, t, alive, p) : hexizonFront(ctx, r, s, face, t, alive, act, p);
   if (id === "spatio") return layer === "back" ? parallaxBack(ctx, r, s, t, alive, act, p) : parallaxFront(ctx, r, s, face, t, alive, p);
+  if (id === "gamma") return layer === "back" ? halflifeBack(ctx, r, s, t, alive, act, p) : halflifeFront(ctx, r, s, face, t, alive, p);
+  if (id === "velo") return layer === "back" ? redlineBack(ctx, r, s, face, t, alive, act, p, vx) : redlineFront(ctx, r, s, face, t, alive, p, vx);
+  if (id === "portal") return layer === "back" ? liminalBack(ctx, r, s, t, alive, act, p) : liminalFront(ctx, r, s, face, t, alive, act, p);
 }

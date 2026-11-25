@@ -205,8 +205,8 @@ const FORM_LOOKS: Record<string, Look> = {
   "crimson-azure-nova": F("sun-flare", "hsl(2 95% 54%)", "hsl(214 100% 64%)", "ember", true, -200, "starburst"),
 };
 // ---------- quest fighters ----------
-// Parallax (space) and Hexizon (indie games). Their signature moves have hand-drawn looks of their own
-// (Spatial Cut, Spatial Prison, Gaster Blaster, Bone Barrage, Bone Zone, Jumbo Roundabout, Blaster Storm);
+// Parallax (space), Hexizon (indie games), Halflife (gamma), Redline (speed) and Liminal (portals and matter). Their signature moves have hand-drawn looks of their own
+// (Spatial Cut, Spatial Prison, Gaster Blaster, Bone Barrage, Bone Zone, Jumbo Roundabout, Blaster Storm, Gamma Ray, Mach Rush, Ring Gate);
 // the rest borrow a signature (`sig`) drawn in their own colours, like the form moves.
 Object.assign(LOOKS, {
   "spatial-cut": L("hsl(245 70% 8%)", "hsl(188 100% 74%)", "shard", true, 0, "slash"),
@@ -216,6 +216,9 @@ Object.assign(LOOKS, {
   "bone-zone": L("hsl(45 25% 88%)", "hsl(128 100% 60%)", "dust", false, 600, "crater"),
   "jumbo-roundabout": L("hsl(330 90% 62%)", "hsl(50 100% 70%)", "star", true, 0, "starburst"),
   "blaster-storm": L("hsl(350 100% 60%)", "hsl(0 0% 100%)", "pixel", true, 0, "starburst", "sky", 1.1),
+  "gamma-ray": L("hsl(80 100% 46%)", "hsl(62 100% 80%)", "spark", true, -80, "flare"),
+  "mach-rush": L("hsl(356 90% 52%)", "hsl(44 100% 66%)", "spark", true, 0, "slash"),
+  "ring-gate": L("hsl(318 100% 62%)", "hsl(176 100% 66%)", "ring", true, 0, "portal"),
 } satisfies Record<string, Look>);
 const QUEST_LOOKS: Record<string, Look> = {
   // Parallax
@@ -243,6 +246,51 @@ const QUEST_LOOKS: Record<string, Look> = {
   "karma-field": F("miasma-cloud", "hsl(290 70% 40%)", "hsl(350 100% 66%)", "pixel", true, -40, "fizz"),
   "bad-time": F("bone-zone", "hsl(45 25% 88%)", "hsl(350 100% 60%)", "dust", false, 600, "crater"),
   "determination": F("mend", "hsl(350 100% 55%)", "hsl(45 100% 70%)", "plus", true, -120),
+  // Halflife
+  "rad-fist": F("heavy-palm", "hsl(84 90% 40%)", "hsl(66 100% 72%)", "spark", true, -120, "flare"),
+  "meltdown-hook": F("ember-jab", "hsl(76 100% 44%)", "hsl(55 100% 70%)", "ember", true, -200, "flare"),
+  "isotope-shot": F("dark-orb", "hsl(88 100% 38%)", "hsl(68 100% 74%)", "bubble", true, -60, "fizz"),
+  "fission-split": F("thunderhead", "hsl(96 90% 42%)", "hsl(60 100% 76%)", "spark", true, 0, "starburst"),
+  "critical-pulse": F("sun-flare", "hsl(84 100% 42%)", "hsl(62 100% 78%)", "spark", true, -100, "flare"),
+  "fallout-zone": F("miasma-cloud", "hsl(90 70% 26%)", "hsl(70 100% 60%)", "smoke", false, -40, "fizz"),
+  "core-slam": F("prominence", "hsl(84 100% 40%)", "hsl(60 100% 74%)", "ember", true, -260, "crater"),
+  "fallout-rain": F("sunspot-rain", "hsl(90 90% 36%)", "hsl(66 100% 70%)", "drop", true, 400, "fizz"),
+  "reactor-charge": F("blink-barrage", "hsl(84 100% 40%)", "hsl(62 100% 76%)", "spark", true, -60, "crater"),
+  "neutron-pull": F("gravity-pull", "hsl(96 70% 30%)", "hsl(66 100% 70%)", "ring", true, 0, "implode"),
+  "cell-mutation": F("mend", "hsl(88 90% 40%)", "hsl(62 100% 76%)", "plus", true, -120),
+  "omega-ray": F("gamma-ray", "hsl(62 100% 46%)", "hsl(0 0% 100%)", "spark", true, -80, "flare"),
+  "chain-reaction": F("meteor-drop", "hsl(80 100% 36%)", "hsl(55 100% 70%)", "ember", true, 400, "starburst"),
+  "ground-zero": F("inferno-ring", "hsl(70 100% 40%)", "hsl(55 100% 76%)", "ember", true, -260, "starburst"),
+  // Redline
+  "blur-jab": F("flash-jab", "hsl(356 85% 54%)", "hsl(44 100% 70%)", "spark", true, 0, "sparks"),
+  "hundred-fists": F("iron-fist", "hsl(8 90% 52%)", "hsl(48 100% 70%)", "spark", true, 0, "starburst"),
+  "slipstream-kick": F("gale-kick", "hsl(350 80% 50%)", "hsl(40 100% 72%)", "spark", true, -40, "swirl"),
+  "sonic-boom": F("psi-wave", "hsl(30 100% 58%)", "hsl(0 0% 100%)", "spark", true, 0, "ripple"),
+  "afterimage": F("shadow-step", "hsl(356 85% 48%)", "hsl(44 100% 68%)", "spark", true, 0, "slash"),
+  "vortex-laps": F("eye-of-the-storm", "hsl(4 80% 46%)", "hsl(44 100% 70%)", "spark", true, -40, "swirl"),
+  "friction-burn": F("inferno-ring", "hsl(14 100% 50%)", "hsl(48 100% 66%)", "ember", true, -200, "flare"),
+  "mach-pebbles": F("rock-toss", "hsl(30 30% 46%)", "hsl(44 100% 70%)", "dust", false, 0, "crater"),
+  "skyfall-heel": F("fault-line", "hsl(356 80% 46%)", "hsl(44 100% 68%)", "dust", false, 300, "crater"),
+  "slingshot": F("magnet-pull", "hsl(356 90% 50%)", "hsl(44 100% 70%)", "spark", true, 0, "implode"),
+  "lightspeed-lunge": F("blade-arm", "hsl(44 100% 56%)", "hsl(0 0% 100%)", "spark", true, 0, "slash"),
+  "light-barrier": F("mach-rush", "hsl(0 100% 46%)", "hsl(0 0% 100%)", "spark", true, 0, "starburst"),
+  "zero-frame": F("warp-kick", "hsl(0 100% 40%)", "hsl(40 100% 66%)", "spark", true, 0, "slash"),
+  "infinite-laps": F("eye-of-the-storm", "hsl(0 90% 30%)", "hsl(40 100% 64%)", "ember", true, -60, "swirl"),
+  // Liminal
+  "portal-punch": F("warp-kick", "hsl(318 90% 56%)", "hsl(176 100% 70%)", "ring", true, 0, "portal"),
+  "matter-palm": F("mind-jab", "hsl(280 50% 44%)", "hsl(318 100% 76%)", "chunk", false, 600, "shatter"),
+  "portal-volley": F("phase-shot", "hsl(318 100% 60%)", "hsl(176 100% 72%)", "ring", true, 0, "portal"),
+  "matter-lance": F("antimatter-lance", "hsl(290 70% 36%)", "hsl(176 100% 72%)", "chunk", false, 400, "shatter"),
+  "portal-drop": F("meteor-drop", "hsl(300 60% 34%)", "hsl(318 100% 72%)", "chunk", false, 900, "crater"),
+  "back-door": F("shadow-step", "hsl(318 90% 50%)", "hsl(176 100% 70%)", "ring", true, 0, "portal"),
+  "transmute-floor": F("stasis-field", "hsl(280 50% 30%)", "hsl(176 100% 64%)", "chunk", false, 0, "shatter"),
+  "matter-spike": F("earth-spike", "hsl(285 40% 30%)", "hsl(318 100% 70%)", "chunk", false, 1000, "crater"),
+  "portal-pull": F("dimension-tear", "hsl(318 90% 46%)", "hsl(176 100% 70%)", "ring", true, 0, "portal"),
+  "unmake": F("rift-burst", "hsl(300 80% 44%)", "hsl(176 100% 74%)", "chunk", false, 300, "shatter"),
+  "reassemble": F("rewind", "hsl(318 90% 56%)", "hsl(176 100% 76%)", "chunk", false, -60),
+  "thousand-doors": F("light-lances", "hsl(300 90% 40%)", "hsl(176 100% 70%)", "ring", true, 200, "portal"),
+  "matter-collapse": F("singularity", "hsl(280 70% 16%)", "hsl(176 100% 66%)", "chunk", false, 0, "implode"),
+  "unmaking-gate": F("ring-gate", "hsl(300 90% 40%)", "hsl(176 100% 66%)", "ring", true, 0, "portal"),
 };
 for (const [id, lk] of Object.entries(QUEST_LOOKS)) FORM_LOOKS[id] = lk;
 for (const [id, lk] of Object.entries(FORM_LOOKS)) {
@@ -1559,6 +1607,30 @@ export function drawShotLook(ctx: CanvasRenderingContext2D, id: string, p: Shot,
       for (const ex of [-r * 1.6, r * 1.6]) for (const sd of [-1, 1]) { ctx.beginPath(); ctx.arc(ex, sd * r * 0.42, r * 0.48, 0, TAU); ctx.fill(); }
       break;
     }
+    case "ring-gate": {
+      // a spinning ring door flying edge-on, its dark middle full of the other side's colour, little bits of matter dragged in its wake
+      ctx.translate(p.x, p.y);
+      const tilt = 0.45 + 0.15 * Math.sin(t * 8);
+      ctx.globalCompositeOperation = "lighter";
+      glow(ctx, 0, 0, r * 2.2, a, 0.35);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "hsl(270 50% 5% / 0.9)";
+      ctx.beginPath(); ctx.ellipse(0, 0, r * tilt, r * 1.2, 0, 0, TAU); ctx.fill();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.strokeStyle = b;
+      ctx.lineWidth = r * 0.16;
+      ctx.beginPath(); ctx.ellipse(0, 0, r * tilt * 0.7, r * 0.85, 0, t * 6, t * 6 + 4); ctx.stroke();
+      ctx.strokeStyle = a;
+      ctx.lineWidth = r * 0.28;
+      ctx.beginPath(); ctx.ellipse(0, 0, r * tilt, r * 1.2, 0, 0, TAU); ctx.stroke();
+      ctx.fillStyle = al(b, 0.8);
+      for (let i = 0; i < 5; i++) {
+        const k = ((t * 3 + i / 5) % 1);
+        const z = r * 0.22 * (1 - k);
+        ctx.fillRect(-dir * k * r * 3 - z, Math.sin(i * 2.3) * r * 0.8 - z, z * 2, z * 2);
+      }
+      break;
+    }
     case "jumbo-roundabout": {
       // a big wheel of orbs spinning round a bright core, swinging up and down as it rolls forward
       ctx.globalCompositeOperation = "lighter";
@@ -2083,6 +2155,40 @@ export function drawBeamLook(ctx: CanvasRenderingContext2D, id: string, bm: Beam
       ctx.strokeStyle = "white";
       ctx.lineWidth = Math.max(1, w * 0.06);
       ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len + w, 0); ctx.stroke();
+      break;
+    }
+    case "gamma-ray": {
+      // a thick green ray that boils along its length, with a radiation core blazing at the hand
+      ctx.globalCompositeOperation = "lighter";
+      const bw = w * (1 + Math.sin(t * 45) * 0.1);
+      const gr = ctx.createLinearGradient(0, -bw, 0, bw);
+      gr.addColorStop(0, al(a, 0));
+      gr.addColorStop(0.25, al(a, 0.75));
+      gr.addColorStop(0.5, al(b, 1));
+      gr.addColorStop(0.75, al(a, 0.75));
+      gr.addColorStop(1, al(a, 0));
+      ctx.fillStyle = gr;
+      ctx.fillRect(0, -bw, len, bw * 2);
+      // bubbles of hot light running down the beam
+      for (let i = 0; i < 10; i++) {
+        const xx = ((t * 900 + i * len / 10) % len);
+        const yy = Math.sin(i * 3.1 + t * 20) * bw * 0.5;
+        glow(ctx, xx, yy, bw * 0.55, b, 0.6);
+      }
+      ctx.strokeStyle = "hsl(0 0% 100% / 0.9)";
+      ctx.lineWidth = Math.max(1, bw * 0.18);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(len, 0); ctx.stroke();
+      glow(ctx, 0, 0, bw * 2.2, b, 0.9);
+      glow(ctx, len, 0, bw * 1.6, a, 0.7);
+      // the three-bladed core at the hand
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "hsl(90 40% 6%)";
+      ctx.beginPath(); ctx.arc(0, 0, bw * 0.9, 0, TAU); ctx.fill();
+      ctx.fillStyle = b;
+      for (let i = 0; i < 3; i++) {
+        const a0 = t * 5 + (i * TAU) / 3;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, bw * 0.8, a0, a0 + 0.9); ctx.closePath(); ctx.fill();
+      }
       break;
     }
     case "gaster-blaster": {
@@ -3037,6 +3143,33 @@ export function drawRushLook(ctx: CanvasRenderingContext2D, id: string, x: numbe
         ctx.stroke();
       }
       break;
+    case "mach-rush": {
+      // a cone of compressed air at the front, a sonic ring peeling off behind and a trail of afterimage outlines
+      ctx.globalCompositeOperation = "lighter";
+      const cy = y - 55 * s;
+      for (let i = 1; i <= 4; i++) {
+        ctx.strokeStyle = al(i % 2 ? b : a, 0.7 / i);
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.ellipse(x - dir * i * 28 * s, cy, 10 * s, 48 * s, 0, 0, TAU);
+        ctx.stroke();
+      }
+      ctx.fillStyle = al(b, 0.35);
+      ctx.beginPath();
+      ctx.moveTo(x + dir * 46 * s, cy);
+      ctx.quadraticCurveTo(x + dir * 18 * s, cy - 60 * s, x - dir * 10 * s, cy - 66 * s);
+      ctx.lineTo(x - dir * 10 * s, cy + 66 * s);
+      ctx.quadraticCurveTo(x + dir * 18 * s, cy + 60 * s, x + dir * 46 * s, cy);
+      ctx.fill();
+      ctx.strokeStyle = al("hsl(0 0% 100%)", 0.8);
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 6; i++) {
+        const yy = cy + (i - 2.5) * 18 * s;
+        const l = (60 + ((i * 29 + Math.floor(t * 40) * 7) % 50)) * s;
+        ctx.beginPath(); ctx.moveTo(x - dir * 20 * s, yy); ctx.lineTo(x - dir * (20 * s + l), yy); ctx.stroke();
+      }
+      break;
+    }
     case "blink-barrage":
       ctx.globalCompositeOperation = "lighter";
       for (let i = 0; i < 3; i++) {

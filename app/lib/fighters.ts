@@ -4,7 +4,7 @@ export type Power =
   | "pyro" | "cryo" | "electro" | "terra" | "aero" | "hydro" | "umbra" | "lux"
   | "gravi" | "tele" | "vita" | "toxi" | "chrono" | "magneto" | "psy" | "shift"
   // quest fighters, earned on the Quests page
-  | "spatio" | "hexizon";
+  | "spatio" | "hexizon" | "gamma" | "velo" | "portal";
 
 export type Role = "attacker" | "control" | "tank" | "support" | "trickster";
 
@@ -328,6 +328,63 @@ export const QUESTERS: FighterDef[] = [
       M({ id: "karma-field", name: "Karma Field", kind: "zone", anim: "slam", range: 380, cd: 8, dmg: 5, radius: 130, dur: 4, status: "poison", statusDur: 1.5, wind: 0.32 }),
     ],
   },
+  {
+    id: "gamma", name: "Halflife", power: "Gamma Radiation", role: "tank",
+    ability: "A walking reactor. Every hit leaks radiation that keeps burning, and the hotter the fight runs, the closer he gets to meltdown.",
+    color: "hsl(100 45% 16%)", glow: "hsl(78 100% 56%)", hp: 340, speed: 90,
+    moves: [
+      M({ id: "rad-fist", name: "Rad Fist", kind: "melee", anim: "jab", range: 80, cd: 0.9, dmg: 11, kb: 280 }),
+      M({ id: "meltdown-hook", name: "Meltdown Hook", kind: "melee", anim: "uppercut", range: 92, cd: 1.6, dmg: 14, kb: 220, lift: -520, wind: 0.22 }),
+      M({ id: "gamma-ray", name: "Gamma Ray", kind: "beam", anim: "thrust", range: 600, minRange: 70, cd: 3.2, dmg: 17, act: 0.36, kb: 240, status: "poison", statusDur: 1.5, wind: 0.32 }),
+      M({ id: "isotope-shot", name: "Isotope Shot", kind: "projectile", anim: "cast", range: 560, minRange: 80, cd: 1.8, dmg: 9, speed: 560, size: 13, status: "poison", statusDur: 2 }),
+      M({ id: "fission-split", name: "Fission Split", kind: "projectile", anim: "thrust", range: 580, minRange: 90, cd: 2.6, dmg: 7, speed: 620, size: 11, count: 3, spread: 0.2, shape: "orb" }),
+      M({ id: "critical-pulse", name: "Critical Pulse", kind: "burst", anim: "slam", range: 150, cd: 5.5, dmg: 16, radius: 180, kb: 520, lift: -300, status: "poison", statusDur: 1.5, wind: 0.3 }),
+      M({ id: "fallout-zone", name: "Fallout Zone", kind: "zone", anim: "raise", range: 400, cd: 8, dmg: 6, radius: 130, dur: 4, status: "poison", statusDur: 1.2, wind: 0.32 }),
+      M({ id: "core-slam", name: "Core Slam", kind: "eruption", anim: "slam", range: 480, minRange: 40, cd: 4.5, dmg: 15, radius: 52, lift: -640, wind: 0.32 }),
+      M({ id: "fallout-rain", name: "Fallout Rain", kind: "rain", anim: "raise", range: 520, cd: 5.5, dmg: 8, count: 6, radius: 150, status: "poison", statusDur: 1, wind: 0.32 }),
+      M({ id: "reactor-charge", name: "Reactor Charge", kind: "dash", anim: "lunge", range: 300, cd: 3.8, dmg: 14, dist: 300, act: 0.25, kb: 420, lift: -200 }),
+      M({ id: "neutron-pull", name: "Neutron Pull", kind: "pull", anim: "cast", range: 440, minRange: 110, cd: 4, dmg: 9, status: "stun", statusDur: 0.35 }),
+      M({ id: "cell-mutation", name: "Cell Mutation", kind: "heal", anim: "raise", range: 2000, cd: 12, dmg: 0, heal: 22, below: 0.6, wind: 0.36, rec: 0.3 }),
+    ],
+  },
+  {
+    id: "velo", name: "Redline", power: "Superspeed", role: "trickster",
+    ability: "Moves faster than the arena can draw him. Leaves afterimages that still hit, throws a hundred punches a second and turns laps into tornadoes.",
+    color: "hsl(356 72% 40%)", glow: "hsl(44 100% 62%)", hp: 260, speed: 165,
+    moves: [
+      M({ id: "blur-jab", name: "Blur Jab", kind: "melee", anim: "jab", range: 74, cd: 0.5, dmg: 7, kb: 160, wind: 0.1 }),
+      M({ id: "hundred-fists", name: "Hundred Fists", kind: "melee", anim: "jab", range: 88, cd: 1.6, dmg: 13, kb: 300, act: 0.24, wind: 0.14 }),
+      M({ id: "slipstream-kick", name: "Slipstream Kick", kind: "melee", anim: "kick", range: 96, cd: 1.2, dmg: 11, kb: 260, lift: -360 }),
+      M({ id: "mach-rush", name: "Mach Rush", kind: "dash", anim: "lunge", range: 420, cd: 2.6, dmg: 12, dist: 420, act: 0.16, kb: 340 }),
+      M({ id: "sonic-boom", name: "Sonic Boom", kind: "projectile", anim: "thrust", range: 600, minRange: 80, cd: 2.2, dmg: 11, speed: 820, size: 16, shape: "wave", pierce: true, kb: 260 }),
+      M({ id: "afterimage", name: "Afterimage", kind: "blink", anim: "kick", range: 620, minRange: 100, cd: 2.4, dmg: 12, kb: 300, lift: -240 }),
+      M({ id: "vortex-laps", name: "Vortex Laps", kind: "zone", anim: "spin", range: 360, cd: 8, dmg: 5, radius: 140, dur: 3.5, pullIn: 280, wind: 0.28 }),
+      M({ id: "friction-burn", name: "Friction Burn", kind: "burst", anim: "spin", range: 140, cd: 5, dmg: 13, radius: 160, kb: 480, lift: -260, status: "burn", statusDur: 2, wind: 0.22 }),
+      M({ id: "mach-pebbles", name: "Mach Pebbles", kind: "projectile", anim: "jab", range: 520, minRange: 60, cd: 1.6, dmg: 4, speed: 900, size: 7, count: 5, spread: 0.14, shape: "rock" }),
+      M({ id: "skyfall-heel", name: "Skyfall Heel", kind: "eruption", anim: "kick", range: 520, minRange: 40, cd: 4, dmg: 14, radius: 46, lift: -660, wind: 0.24 }),
+      M({ id: "slingshot", name: "Slingshot", kind: "pull", anim: "cast", range: 460, minRange: 110, cd: 3.6, dmg: 9, status: "stun", statusDur: 0.3 }),
+      M({ id: "lightspeed-lunge", name: "Lightspeed Lunge", kind: "melee", anim: "lunge", range: 165, minRange: 50, cd: 1.8, dmg: 13, kb: 320, wind: 0.14 }),
+    ],
+  },
+  {
+    id: "portal", name: "Liminal", power: "Portal and Matter Manipulation", role: "control",
+    ability: "Opens doors anywhere and rebuilds whatever comes through them. Punches through portals, drops things from the sky and pulls itself back together.",
+    color: "hsl(265 30% 14%)", glow: "hsl(318 100% 66%)", hp: 300, speed: 102,
+    moves: [
+      M({ id: "portal-punch", name: "Portal Punch", kind: "melee", anim: "thrust", range: 160, minRange: 40, cd: 1, dmg: 11, kb: 260 }),
+      M({ id: "matter-palm", name: "Matter Palm", kind: "melee", anim: "jab", range: 80, cd: 0.8, dmg: 9, kb: 240 }),
+      M({ id: "ring-gate", name: "Ring Gate", kind: "projectile", anim: "thrust", range: 620, minRange: 90, cd: 2.8, dmg: 13, speed: 480, size: 18, shape: "disc", pierce: true, kb: 280 }),
+      M({ id: "portal-volley", name: "Portal Volley", kind: "projectile", anim: "cast", range: 560, minRange: 80, cd: 2, dmg: 6, speed: 640, size: 9, count: 3, spread: 0.18, shape: "orb" }),
+      M({ id: "matter-lance", name: "Matter Lance", kind: "beam", anim: "thrust", range: 580, minRange: 70, cd: 3, dmg: 16, act: 0.3, kb: 260, wind: 0.28 }),
+      M({ id: "portal-drop", name: "Portal Drop", kind: "rain", anim: "raise", range: 540, cd: 5, dmg: 9, count: 5, radius: 150, wind: 0.32 }),
+      M({ id: "back-door", name: "Back Door", kind: "blink", anim: "kick", range: 640, minRange: 110, cd: 3, dmg: 13, kb: 320, lift: -260 }),
+      M({ id: "transmute-floor", name: "Transmute Floor", kind: "zone", anim: "slam", range: 400, cd: 8, dmg: 5, radius: 135, dur: 4, status: "slow", statusDur: 0.6, wind: 0.32 }),
+      M({ id: "matter-spike", name: "Matter Spike", kind: "eruption", anim: "slam", range: 500, minRange: 40, cd: 4.2, dmg: 14, radius: 44, count: 2, lift: -600, wind: 0.3 }),
+      M({ id: "portal-pull", name: "Portal Pull", kind: "pull", anim: "cast", range: 480, minRange: 110, cd: 3.6, dmg: 10, status: "stun", statusDur: 0.35 }),
+      M({ id: "unmake", name: "Unmake", kind: "burst", anim: "raise", range: 150, cd: 5.5, dmg: 15, radius: 170, kb: 540, lift: -280, wind: 0.3 }),
+      M({ id: "reassemble", name: "Reassemble", kind: "heal", anim: "raise", range: 2000, cd: 12, dmg: 0, heal: 20, below: 0.6, wind: 0.36, rec: 0.3 }),
+    ],
+  },
 ];
 
 export const QUEST_IDS = new Set<Power>(QUESTERS.map((q) => q.id));
@@ -359,6 +416,9 @@ const WINGS: Record<Power, Wing> = {
   shift: { word: "Morph", shape: "blade", status: "slow", statusDur: 1 },
   spatio: { word: "Rift", shape: "shard", status: "slow", statusDur: 1 },
   hexizon: { word: "Bone", shape: "blade", status: "poison", statusDur: 1.5 },
+  gamma: { word: "Gamma", shape: "orb", status: "poison", statusDur: 1.5 },
+  velo: { word: "Mach", shape: "wave" },
+  portal: { word: "Portal", shape: "disc", status: "slow", statusDur: 1 },
 };
 
 export function wingMoves(id: Power): Move[] {

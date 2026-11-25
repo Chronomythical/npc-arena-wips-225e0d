@@ -256,6 +256,39 @@ FORMS.hexizon = {
     M({ id: "determination", name: "Determination", kind: "heal", anim: "raise", range: 2000, cd: 14, dmg: 0, heal: 30, below: 0.45, wind: 0.36 }),
   ],
 };
+FORMS.gamma = {
+  power: "gamma", kind: "nightmare", title: "MELTDOWN", ...NIGHTMARE,
+  blurb: "His core goes critical. The green burns to a sick black glow, every swing leaks fallout and the ground itself starts to split.",
+  body: "hsl(90 30% 6%)", glow: "hsl(62 100% 55%)", a: "hsl(88 100% 42%)", b: "hsl(58 100% 62%)", dark: "hsl(90 40% 3%)",
+  dmg: 1.35, kb: 1.25, cd: 0.7, speed: 1.15, act: 1.2,
+  moves: [
+    M({ id: "omega-ray", name: "Omega Ray", kind: "beam", anim: "thrust", range: 860, minRange: 60, cd: 5, dmg: 24, act: 0.45, kb: 380, status: "poison", statusDur: 2.5, wind: 0.42 }),
+    M({ id: "chain-reaction", name: "Chain Reaction", kind: "rain", anim: "raise", range: 560, cd: 6, dmg: 10, count: 7, radius: 180, status: "poison", statusDur: 1.5, wind: 0.34, rec: 0.3 }),
+    M({ id: "ground-zero", name: "Ground Zero", kind: "burst", anim: "slam", range: 180, cd: 7.5, dmg: 24, radius: 230, kb: 600, lift: -460, status: "poison", statusDur: 2, wind: 0.38, rec: 0.35 }),
+  ],
+};
+FORMS.velo = {
+  power: "velo", kind: "nightmare", title: "TERMINAL VELOCITY", ...NIGHTMARE,
+  blurb: "He breaks a speed nothing should reach. His afterimages turn black and red, stay behind to fight, and his laps tear the arena open.",
+  body: "hsl(0 40% 6%)", glow: "hsl(0 100% 58%)", a: "hsl(0 100% 48%)", b: "hsl(40 100% 64%)", dark: "hsl(0 0% 0%)",
+  dmg: 1.3, kb: 1.2, cd: 0.65, speed: 1.3, act: 1.2,
+  moves: [
+    M({ id: "light-barrier", name: "Light Barrier", kind: "dash", anim: "lunge", range: 640, cd: 4, dmg: 20, dist: 640, act: 0.2, kb: 480, lift: -260 }),
+    M({ id: "zero-frame", name: "Zero Frame", kind: "blink", anim: "uppercut", range: 700, minRange: 80, cd: 3.2, dmg: 18, kb: 260, lift: -620 }),
+    M({ id: "infinite-laps", name: "Infinite Laps", kind: "zone", anim: "spin", range: 380, cd: 8.5, dmg: 8, radius: 170, dur: 4, pullIn: 380, status: "burn", statusDur: 0.6, wind: 0.32 }),
+  ],
+};
+FORMS.portal = {
+  power: "portal", kind: "nightmare", title: "EVERY DOOR OPEN", ...NIGHTMARE,
+  blurb: "Every door it ever opened swings wide at once. Things fall through from everywhere, shots vanish into its field and matter comes apart at its touch.",
+  body: "hsl(270 40% 5%)", glow: "hsl(176 100% 56%)", a: "hsl(300 90% 40%)", b: "hsl(176 100% 66%)", dark: "hsl(270 50% 2%)",
+  dmg: 1.35, kb: 1.2, cd: 0.7, speed: 1.2, act: 1.2,
+  moves: [
+    M({ id: "thousand-doors", name: "Thousand Doors", kind: "rain", anim: "raise", range: 580, cd: 6, dmg: 10, count: 8, radius: 190, wind: 0.34, rec: 0.3 }),
+    M({ id: "matter-collapse", name: "Matter Collapse", kind: "zone", anim: "raise", range: 420, cd: 9, dmg: 8, radius: 150, dur: 4, pullIn: 320, erase: true, status: "slow", statusDur: 0.6, wind: 0.36 }),
+    M({ id: "unmaking-gate", name: "Unmaking Gate", kind: "projectile", anim: "thrust", range: 700, minRange: 80, cd: 4.5, dmg: 20, speed: 420, size: 26, shape: "disc", pierce: true, kb: 420, wind: 0.32 }),
+  ],
+};
 
 /** Pyro's second step: from Blue Flame into red and blue fire at once. Stronger and faster than his Rage Mode. */
 export const PERFECTED_FLAME: Form = {

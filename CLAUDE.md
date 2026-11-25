@@ -16,12 +16,12 @@ NPC Arena is a single-player game where you watch power-themed NPCs fight. No si
 - Team Tournament reuses that same bracket engine and view: picks split into teams of 2 or 3 in pick order (3 to 8 teams, max 16 fighters), bracket entrants are `team0..team7` (team number = colour and name, 8 team colours in the engine), each match is a team fight between the two teams' fighters. It keeps its own bracket state beside the solo Tournament's.
 - Engine: `app/lib/arena-engine.ts` (newGame, newDemo, step, drawScene): physics, camera, hitstop, clashes, dashes, AI, forms cutscenes, entrances.
 - Cinematic layer: `app/lib/arena-cinema.ts` draws what the engine times: per-element floor marks, super-move cut-ins (moves with cooldown 6s+, fights of 4 or fewer, one per 7s), name cards and a camera spotlight during entrances, letterbox bars, focus lines and the inverted impact frame on K.O.s. New sounds (READY, FIGHT, cut-in, final K.O.) live in `arena-sound.ts`.
-- Fighters are data in `app/lib/fighters.ts` (16 originals, 4 moves each, plus quest fighters); move visuals in `lib/move-looks.ts`; forms in `lib/forms.ts` (Nightmare Mode, the quest fighters' form, is immune to stun and freeze); entrances in `lib/spawn-intros.ts`.
+- Fighters are data in `app/lib/fighters.ts` (16 originals, 4 moves each, plus 5 quest fighters with 12 moves each: Parallax, Hexizon, Halflife, Redline, Liminal); move visuals in `lib/move-looks.ts`; forms in `lib/forms.ts` (Nightmare Mode, the quest fighters' form, is immune to stun and freeze); entrances in `lib/spawn-intros.ts`. A quest fighter's body design is in `lib/quest-designs.ts`, its stance/idle and particle look in `arena-engine.ts` (QUEST_STANCE, FX), its voice in `arena-sound.ts` (CAST, IMPACT), its floor mark in `arena-cinema.ts`.
 - Story: `lib/story.ts` (7 chapters x 10 stages) with bosses in `lib/bosses.ts`, drawn by `lib/boss-designs.ts`.
 - Hybrids/fusion: `hybridOf` in fighters.ts, saved via `lib/hybrids.ts`, fusion lab in `components/fusion-sheet.tsx`.
 - Fighters page (`/roster`) and Quests page (`/quests`, `lib/quests.ts`, unlock cutscenes in `components/quest-scenes.tsx`). Claiming a finished quest saves its id in `claimed`; `unlockedOf` is the one list of playable quest fighters, read by the arena chips, the Juggernaut picker, and `FighterSelect` (Story pair and Fusion lab). "Fight as X" links to `/?fighter=<id>`, which opens a Duel with that fighter picked.
 - Sound and music are synthesised live with Web Audio (`lib/arena-sound.ts`, `lib/arena-music.ts`), volume saved in localStorage.
-- Not built yet: boss unlocks, boss phases, the last 3 quest fighters.
+- Not built yet: boss unlocks, boss phases.
 Everything below this section is Stencil's platform documentation.
 
 ## Platform-managed — don't touch

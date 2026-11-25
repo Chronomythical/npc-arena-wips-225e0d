@@ -986,6 +986,213 @@ export const INTROS: Record<Power, IntroSpec> = {
     },
   },
 
+  // Halflife: a warning glow builds under the floor, the ground cracks green, and he bursts up out of it in a
+  // mushroom of radioactive light, smoking, his core the last thing to steady.
+  gamma: {
+    len: 1.9, hit: 0.5, shake: 13, wave: ["hsl(78 100% 56%)", "hsl(100 60% 20%)"],
+    body: (u, s) => base(u < 0.5 ? "crouch" : settle(u, "flex", 0.72), {
+      clip: u < 0.56,
+      alpha: u < 0.38 ? 0 : 1,
+      dy: u < 0.5 ? (1 - easeOut(seg(u, 0.38, 0.5))) * 110 * s : -Math.sin(seg(u, 0.5, 0.66) * Math.PI) * 26 * s,
+      sx: u < 0.5 ? 1 : 1 + 0.12 * (1 - seg(u, 0.5, 0.7)), sy: u < 0.5 ? 1 : 1 - 0.1 * (1 - seg(u, 0.5, 0.7)),
+      solid: "hsl(72 100% 70%)", solidA: 1 - seg(u, 0.5, 0.86),
+    }),
+    bursts: [
+      { at: 0.5, n: 40, spd: 540, shape: "spark", a: "hsl(78 100% 56%)", b: "hsl(60 100% 80%)", grav: -60, add: true, from: "feet", dir: "up", spread: 0.9 },
+      { at: 0.5, n: 22, spd: 300, shape: "chunk", a: "hsl(100 20% 22%)", b: "hsl(90 30% 40%)", grav: 1000, add: false, from: "feet", dir: "up" },
+      { at: 0.56, n: 18, spd: 120, shape: "smoke", a: "hsl(100 40% 18%)", b: "hsl(80 60% 34%)", grav: -90, add: false, from: "body", dir: "out" },
+    ],
+    trickle: { rate: 36, until: 0.5, spd: 140, shape: "spark", a: "hsl(78 100% 56%)", b: "hsl(60 100% 78%)", grav: -200, add: true, from: "feet", dir: "up", spread: 0.5, life: 0.7 },
+    back: ({ ctx, x, ground, s, u, t }) => {
+      ctx.save();
+      // the glow building under the floor
+      const warn = seg(u, 0, 0.45) * (1 - seg(u, 0.7, 0.95));
+      if (warn > 0) {
+        ctx.globalCompositeOperation = "lighter";
+        glow(ctx, x, ground, (60 + 40 * warn) * s, (14 + 6 * warn) * s, hsla(78, 100, 56, 0.7 * warn * (0.75 + 0.25 * Math.sin(t * 18))), hsla(78, 100, 50, 0));
+      }
+      // cracks running out along the floor
+      const cr = easeOut(seg(u, 0.15, 0.5)) * (1 - seg(u, 0.8, 1));
+      if (cr > 0) {
+        ctx.globalCompositeOperation = "lighter";
+        ctx.strokeStyle = hsla(72, 100, 66, 0.9 * cr);
+        ctx.lineWidth = 2.4 * s;
+        for (let i = 0; i < 6; i++) {
+          const side = i % 2 ? 1 : -1, len = (50 + 30 * wob(i + 2)) * s * cr;
+          jag(ctx, x, ground + 1, x + side * len, ground + 1 + wob(i * 5) * 4 * s, 4, 3 * s, i * 7);
+          ctx.stroke();
+        }
+      }
+      // the mushroom of light once he bursts out
+      const m = seg(u, 0.48, 0.9);
+      if (m > 0 && m < 1) {
+        ctx.globalCompositeOperation = "lighter";
+        const a = 1 - m;
+        const stemH = 180 * s * easeOut(m);
+        const g = ctx.createLinearGradient(0, ground, 0, ground - stemH);
+        g.addColorStop(0, hsla(72, 100, 70, 0.7 * a));
+        g.addColorStop(1, hsla(78, 100, 56, 0.1 * a));
+        ctx.fillStyle = g;
+        ctx.fillRect(x - 22 * s * (1 + m), ground - stemH, 44 * s * (1 + m), stemH);
+        glow(ctx, x, ground - stemH, (50 + 70 * m) * s, (26 + 30 * m) * s, hsla(66, 100, 74, 0.75 * a), hsla(84, 100, 40, 0));
+        ctx.strokeStyle = hsla(70, 100, 80, 0.8 * a);
+        ctx.lineWidth = 3 * s;
+        ctx.beginPath();
+        ctx.ellipse(x, ground - 4 * s, (40 + 160 * m) * s, (6 + 14 * m) * s, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    },
+    front: ({ ctx, x, y, s, u, t }) => {
+      // the core igniting: three blades flick round once and settle
+      const k = seg(u, 0.7, 0.95);
+      if (k <= 0 || k >= 1) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const cy = y - 70 * s;
+      glow(ctx, x, cy, 46 * s * (1 - k * 0.5), 46 * s * (1 - k * 0.5), hsla(70, 100, 70, 0.7 * (1 - k)), hsla(78, 100, 50, 0));
+      ctx.fillStyle = hsla(66, 100, 78, 1 - k);
+      for (let i = 0; i < 3; i++) {
+        const a0 = t * 8 + (i * Math.PI * 2) / 3, r = 30 * s * (1 - k * 0.6);
+        ctx.beginPath(); ctx.moveTo(x, cy); ctx.arc(x, cy, r, a0, a0 + 0.8); ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+    },
+  },
+
+  // Redline: a red-gold streak laps the arena twice, carving a ring of fire into the floor, then stops dead on his
+  // mark so hard the air cracks into a sonic boom, and his afterimages catch up with him one by one.
+  velo: {
+    len: 1.7, hit: 0.52, shake: 10, wave: ["hsl(44 100% 66%)", "hsl(356 80% 46%)"],
+    body: (u, s) => base(u < 0.52 ? "air" : settle(u, "land", 0.7), {
+      alpha: u < 0.46 ? 0 : 1,
+      dx: u < 0.52 ? -(1 - easeOut(seg(u, 0.46, 0.52))) * 160 * s : 0,
+      sx: u < 0.56 ? 1.25 - 0.25 * seg(u, 0.5, 0.56) : 1, sy: u < 0.56 ? 0.88 : 1,
+      echo: u > 0.5 && u < 0.85 ? { spread: (1 - seg(u, 0.5, 0.85)) * 70 * s, alpha: 0.5 * (1 - seg(u, 0.5, 0.85)) } : undefined,
+      solid: "hsl(44 100% 70%)", solidA: 1 - seg(u, 0.52, 0.78),
+    }),
+    bursts: [
+      { at: 0.52, n: 30, spd: 620, shape: "spark", a: "hsl(44 100% 66%)", b: "hsl(0 0% 100%)", grav: 0, add: true, from: "body", dir: "out" },
+      { at: 0.52, n: 24, spd: 520, shape: "dust", a: "hsl(30 30% 60%)", b: "hsl(40 40% 80%)", grav: -20, add: false, from: "feet", dir: "flat" },
+      { at: 0.54, n: 12, spd: 360, shape: "ember", a: "hsl(14 100% 56%)", b: "hsl(48 100% 70%)", grav: -200, add: true, from: "feet", dir: "up" },
+    ],
+    back: ({ ctx, x, y, ground, s, u, t }) => {
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      // the streak running laps: a bright head on an ellipse round the spot, with a fading tail
+      const run = seg(u, 0, 0.5);
+      if (run > 0 && run < 1) {
+        const R = 170 * s, Ry = 34 * s, cy = ground - 26 * s;
+        const head = easeIn(run) * Math.PI * 4;
+        for (let i = 0; i < 18; i++) {
+          const a = head - i * 0.12;
+          if (a < 0) break;
+          const px = x + Math.cos(a) * R * (1 - run * 0.6), py = cy + Math.sin(a) * Ry;
+          glow(ctx, px, py - 30 * s, (16 - i * 0.7) * s, (40 - i * 1.5) * s, hsla(i < 3 ? 44 : 356, 100, i < 3 ? 70 : 54, 0.6 * (1 - i / 18)), hsla(356, 100, 50, 0));
+        }
+      }
+      // the ring of fire left on the floor
+      const ring = seg(u, 0.1, 0.5) * (1 - seg(u, 0.75, 1));
+      if (ring > 0) {
+        ctx.strokeStyle = hsla(24, 100, 58, 0.7 * ring);
+        ctx.lineWidth = 3 * s;
+        ctx.beginPath();
+        ctx.ellipse(x, ground, 170 * s * (1 - seg(u, 0, 0.5) * 0.6), 18 * s, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        for (let i = 0; i < 10; i++) {
+          const a = (i / 10) * Math.PI * 2, R = 170 * s * (1 - seg(u, 0, 0.5) * 0.6);
+          ctx.fillStyle = hsla(40, 100, 64, ring * (0.4 + 0.6 * Math.abs(Math.sin(t * 14 + i))));
+          ctx.fillRect(x + Math.cos(a) * R - 1.5 * s, ground + Math.sin(a) * 18 * s - 6 * s, 3 * s, 6 * s);
+        }
+      }
+      // the sonic boom: a cone of rings bursting from where he stopped
+      const boom = seg(u, 0.5, 0.8);
+      if (boom > 0 && boom < 1) {
+        for (let i = 0; i < 3; i++) {
+          const k = Math.min(1, boom * (1 + i * 0.4));
+          ctx.strokeStyle = hsla(0, 0, 100, (1 - k) * 0.8);
+          ctx.lineWidth = 3 * s * (1 - k);
+          ctx.beginPath();
+          ctx.ellipse(x, y - 55 * s, (20 + 140 * k) * s, (50 + 70 * k) * s, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    },
+  },
+
+  // Liminal: two small doors open on either side, bits of matter pour out of both and stream to the middle, where
+  // they click together into its body; a great ring door swings open behind it and shuts.
+  portal: {
+    len: 1.9, hit: 0.58, shake: 9, wave: ["hsl(318 100% 66%)", "hsl(176 100% 60%)"],
+    body: (u, s) => base(u < 0.58 ? "float" : settle(u, "flex", 0.74), {
+      alpha: seg(u, 0.3, 0.58),
+      sx: 0.6 + 0.4 * easeOut(seg(u, 0.3, 0.6)), sy: 0.6 + 0.4 * easeOut(seg(u, 0.3, 0.6)),
+      dy: -(1 - easeOut(seg(u, 0.3, 0.62))) * 20 * s,
+      solid: "hsl(318 100% 80%)", solidA: 1 - seg(u, 0.55, 0.85),
+    }),
+    bursts: [
+      { at: 0.58, n: 30, spd: 420, shape: "ring", a: "hsl(318 100% 66%)", b: "hsl(176 100% 70%)", grav: 0, add: true, from: "body", dir: "out" },
+      { at: 0.58, n: 20, spd: 320, shape: "chunk", a: "hsl(285 40% 36%)", b: "hsl(176 100% 70%)", grav: 700, add: false, from: "body", dir: "out" },
+    ],
+    trickle: { rate: 60, until: 0.56, spd: 0, shape: "chunk", a: "hsl(318 100% 66%)", b: "hsl(176 100% 70%)", grav: 0, add: false, from: "body", dir: "in", spread: 150, life: 0.5 },
+    back: ({ ctx, x, y, s, u, t }) => {
+      ctx.save();
+      const cy = y - 55 * s;
+      // the two side doors
+      const side = easeOut(seg(u, 0, 0.18)) * (1 - easeIn(seg(u, 0.5, 0.66)));
+      if (side > 0.01) {
+        for (const sd of [-1, 1]) {
+          const dx = x + sd * 130 * s, rx = 14 * s * side, ry = 46 * s * side;
+          ctx.fillStyle = "hsl(270 50% 4% / 0.9)";
+          ctx.beginPath(); ctx.ellipse(dx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.strokeStyle = hsla(sd < 0 ? 318 : 176, 100, 66, side);
+          ctx.lineWidth = 4 * s;
+          ctx.beginPath(); ctx.ellipse(dx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+          // matter streaming out toward the middle
+          for (let i = 0; i < 8; i++) {
+            const k = (t * 1.6 + i / 8) % 1;
+            const mx = lerp(dx, x, k), my = cy + Math.sin(i * 2.7 + k * 5) * 30 * s * (1 - k);
+            const z = 3.5 * s * (1 - k * 0.4);
+            ctx.fillStyle = hsla(i % 2 ? 318 : 176, 100, 70, side * 0.9);
+            ctx.fillRect(mx - z, my - z, z * 2, z * 2);
+          }
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      // the great door behind, swinging open as it forms and shutting after
+      const big = easeOut(seg(u, 0.36, 0.6)) * (1 - easeInOut(seg(u, 0.7, 0.95)));
+      if (big > 0.01) {
+        const rx = 50 * s * big, ry = 80 * s;
+        ctx.fillStyle = "hsl(270 50% 4% / 0.85)";
+        ctx.beginPath(); ctx.ellipse(x, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = "lighter";
+        for (let i = 0; i < 12; i++) {
+          ctx.fillStyle = hsla(i % 2 ? 318 : 176, 100, 80, big * (0.4 + 0.6 * Math.abs(Math.sin(t * 5 + i))));
+          ctx.fillRect(x + wob(i * 1.7) * rx * 0.7, cy + wob(i * 3.1 + 2) * ry * 0.7, 2 * s, 2 * s);
+        }
+        ctx.strokeStyle = hsla(318, 100, 66, big);
+        ctx.lineWidth = 5 * s;
+        ctx.beginPath(); ctx.ellipse(x, cy, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = hsla(176, 100, 66, big * 0.8);
+        ctx.lineWidth = 2.5 * s;
+        ctx.beginPath(); ctx.ellipse(x, cy, rx * 0.8, ry * 0.86, 0, t * 4, t * 4 + 4.4); ctx.stroke();
+      }
+      ctx.restore();
+    },
+    front: ({ ctx, x, y, s, u }) => {
+      // the click: a bright keyhole flash where its face will be
+      const k = seg(u, 0.56, 0.74);
+      if (k <= 0 || k >= 1) return;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      const hy = y - 112 * s;
+      glow(ctx, x, hy, 44 * s * k + 6 * s, 44 * s * k + 6 * s, hsla(0, 0, 100, 0.9 * (1 - k)), hsla(318, 100, 66, 0));
+      ctx.restore();
+    },
+  },
+
 };
 
 // ---------- the 7 Story bosses ----------

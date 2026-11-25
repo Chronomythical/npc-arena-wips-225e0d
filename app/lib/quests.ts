@@ -19,9 +19,9 @@ export type Quest = {
 export const QUESTS: Quest[] = [
   { id: "fold", reward: "spatio", goals: [{ stat: "fights", need: 5 }, { stat: "kos", need: 40 }] },
   { id: "gameover", reward: "hexizon", goals: [{ stat: "tournaments", need: 1 }, { stat: "bosses", need: 1 }, { stat: "forms", need: 5 }] },
-  { id: "gamma", reward: null, goals: [] },
-  { id: "speed", reward: null, goals: [] },
-  { id: "portal", reward: null, goals: [] },
+  { id: "gamma", reward: "gamma", goals: [{ stat: "kos", need: 100 }, { stat: "forms", need: 10 }, { stat: "bosses", need: 1 }] },
+  { id: "speed", reward: "velo", goals: [{ stat: "fights", need: 20 }, { stat: "kos", need: 150 }, { stat: "tournaments", need: 1 }] },
+  { id: "portal", reward: "portal", goals: [{ stat: "fights", need: 40 }, { stat: "forms", need: 20 }, { stat: "tournaments", need: 1 }, { stat: "bosses", need: 1 }] },
 ];
 
 const KEY = "npc-arena-quests";

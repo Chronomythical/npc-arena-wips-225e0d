@@ -361,6 +361,52 @@ const MARKS: Partial<Record<Power, MarkDraw>> = {
     }
     pool(ctx, m.w * 0.7, `hsl(0 0% 0% / ${0.45 * k})`, "hsl(0 0% 0% / 0)");
   },
+  gamma: (ctx, m, k, r, t) => {
+    // a scorched patch glowing green at the middle, with motes of radiation rising off it
+    pool(ctx, m.w, `hsl(95 40% 6% / ${0.6 * k})`, "hsl(95 40% 6% / 0)");
+    ctx.globalCompositeOperation = "lighter";
+    pool(ctx, m.w * 0.45, withA(m.a, 0.45 * k * (0.75 + 0.25 * Math.sin(t * 9))), withA(m.a, 0));
+    for (let i = 0; i < 6; i++) {
+      const x = (r() * 2 - 1) * m.w * 0.6, rise = (t * 0.8 + r()) % 1;
+      ctx.fillStyle = withA(i % 2 ? m.b : m.a, 0.8 * k * (1 - rise));
+      ctx.beginPath();
+      ctx.arc(x, -rise * 24, 1.6 + r() * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  },
+  velo: (ctx, m, k, r) => {
+    // skid marks: dark streaks smeared along the floor with a few embers caught in them
+    for (let i = 0; i < 4; i++) {
+      const y = (r() * 2 - 1) * m.w * 0.12, x0 = -m.w * (0.5 + r() * 0.4), x1 = m.w * (0.5 + r() * 0.4);
+      ctx.strokeStyle = `hsl(0 0% 6% / ${0.55 * k})`;
+      ctx.lineWidth = 2 + r() * 2;
+      ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+    }
+    ctx.globalCompositeOperation = "lighter";
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = withA(i % 2 ? m.b : m.a, 0.7 * k);
+      ctx.fillRect((r() * 2 - 1) * m.w * 0.7, -(r() * 4), 3, 2);
+    }
+  },
+  portal: (ctx, m, k, r, t) => {
+    // a ring door lying open in the floor, with chips of matter scattered round it
+    flat(ctx, () => {
+      ctx.fillStyle = `hsl(270 50% 4% / ${0.7 * k})`;
+      ctx.beginPath(); ctx.arc(0, 0, m.w * 0.6, 0, Math.PI * 2); ctx.fill();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.strokeStyle = withA(m.a, 0.8 * k);
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, m.w * 0.6, 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = withA(m.b, 0.6 * k);
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, m.w * 0.45, t * 3, t * 3 + 4.2); ctx.stroke();
+    });
+    for (let i = 0; i < 6; i++) {
+      const x = (r() * 2 - 1) * m.w, z = 2 + r() * 3;
+      ctx.fillStyle = withA(i % 2 ? m.a : m.b, 0.8 * k);
+      ctx.fillRect(x - z / 2, -z - r() * 3, z, z);
+    }
+  },
 };
 
 const ringMark: MarkDraw = (ctx, m, k) => {

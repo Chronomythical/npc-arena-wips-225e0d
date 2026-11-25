@@ -214,6 +214,27 @@ const CAST: Record<Power, Voice> = {
     s.tone(110 * p, 880 * p, 0.2 * len, 0.12, { type: "square", lp: 3200, delay: 0.12 * len });
     s.noise(3000, 900, 0.12 * len, 0.25, { type: "bandpass", q: 6, delay: 0.26 * len });
   },
+  // Halflife: a Geiger counter crackling faster, a reactor hum swelling under it, then a heavy thrum
+  gamma: (s, p, len, v) => {
+    for (let i = 0; i < 6 + v * 2; i++) s.noise(5200, 4800, 0.012, 0.35, { type: "highpass", delay: (i * i * 0.012 + Math.random() * 0.02) * len });
+    s.tone(60 * p, 60 * p, 0.6 * len, 0.35, { type: "sawtooth", lp: 420, attack: 0.25 * len, vib: [50, 3] });
+    s.tone(120 * p, 122 * p, 0.6 * len, 0.18, { type: "square", lp: 600, attack: 0.25 * len });
+    s.tone(240 * p * (1 + v * 0.1), 480 * p, 0.3 * len, 0.12, { type: "sine", delay: 0.25 * len, vib: [14, 30] });
+  },
+  // Redline: a sharp whoosh that rips past, a doppler drop and a crack of air
+  velo: (s, p, len, v) => {
+    s.noise(800 * p, 6000 * p, 0.12 * len, 0.5, { type: "bandpass", q: 2, attack: 0.08 * len });
+    s.noise(6000 * p, 600 * p, 0.18 * len, 0.4, { type: "bandpass", q: 2, delay: 0.1 * len });
+    s.tone(1500 * p * (1 + v * 0.08), 300 * p, 0.2 * len, 0.12, { type: "sawtooth", lp: 3500, delay: 0.06 * len });
+    s.noise(8000, 3000, 0.03, 0.35, { type: "highpass", delay: 0.22 * len });
+  },
+  // Liminal: a door swinging open on a bright two-note chime, with a hollow suck of air through it
+  portal: (s, p, len, v) => {
+    const pair = v === 0 ? [660, 990] : v === 1 ? [587, 880] : [740, 1109];
+    pair.forEach((n, i) => s.fm(n * p, 2, 2.5, 0.45 * len, 0.16, i * 0.09 * len));
+    s.noise(1800 * p, 260 * p, 0.4 * len, 0.35, { type: "bandpass", q: 5, attack: 0.15 * len });
+    s.tone(180 * p, 90 * p, 0.35 * len, 0.25, { type: "sine", delay: 0.12 * len });
+  },
 };
 
 const IMPACT: Record<Power, Voice> = {
@@ -247,6 +268,24 @@ const IMPACT: Record<Power, Voice> = {
     s.tone(900 * p, 90, 0.12, 0.3, { type: "square", lp: 4000 });
     s.noise(2400, 600, 0.1, 0.5, { type: "bandpass", q: 8 });
     s.tone(60, 40, 0.15, 0.35, { type: "triangle" });
+  },
+  // a hot thud with a burst of counter clicks
+  gamma: (s, p) => {
+    s.tone(90 * p, 36, 0.22, 0.7, { type: "sine" });
+    s.noise(1400 * p, 300, 0.18, 0.45, { type: "lowpass", q: 2 });
+    for (let i = 0; i < 5; i++) s.noise(5200, 4800, 0.01, 0.3, { type: "highpass", delay: 0.02 + i * 0.03 + Math.random() * 0.02 });
+  },
+  // a quick slap and a whip-crack of air
+  velo: (s, p) => {
+    s.noise(3800 * p, 900, 0.07, 0.6, { type: "bandpass", q: 1.5 });
+    s.noise(9000, 4000, 0.025, 0.4, { type: "highpass", delay: 0.04 });
+    s.tone(220 * p, 80, 0.08, 0.3);
+  },
+  // matter clattering apart through a slammed door
+  portal: (s, p) => {
+    s.fm(520 * p, 1.5, 4, 0.2, 0.2);
+    s.tone(130 * p, 50, 0.18, 0.5, { type: "sine" });
+    for (let i = 0; i < 3; i++) s.noise(2400 + i * 900, 1200, 0.03, 0.25, { type: "bandpass", q: 4, delay: 0.03 + i * 0.04 });
   },
 };
 
