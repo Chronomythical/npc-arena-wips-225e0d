@@ -10,16 +10,15 @@ happens, and anything chained after it still runs.
 
 ## About this app
 
-Not written yet. On this app's first build, replace this paragraph with the app's
-purpose, its main flows, and the mechanism it chose for each big job — how it
-renders, exports, sends, syncs — one plain-English line each. Ten to twenty lines,
-no code: the app builder reads this section too. Write it with your file-editing tool,
-in its own step before the build, never through a shell command. Fixed after a build has
-deployed, it is saved and goes out with the next build — never build for it alone. Keep it
-current — a turn that introduces, replaces or removes a mechanism updates this section in the
-same turn. It is a summary of the app as it is now, not a log of what each turn changed:
-rewrite it when it grows. Anything past about 16,000 characters is moved to `APP-HISTORY.md` before
-the next turn; read that file only when a task needs what an earlier turn did.
+NPC Arena is a single-player game where you watch power-themed NPCs fight. No sign-in, no database; all progress lives in the browser's localStorage. Brought over unchanged from the builder's earlier version of this app (same stack), so screens, wording and rules are theirs.
+- Arena (`/`, `app/routes/home.tsx`): title screen with a silent demo fight, then a canvas fighting arena. Modes: Duel, Free for all, Teams, Tournament (`lib/bracket.ts`), Juggernaut, Story.
+- Engine: `app/lib/arena-engine.ts` (newGame, newDemo, step, drawScene): physics, camera, hitstop, clashes, dashes, AI, forms cutscenes, entrances.
+- Fighters are data in `app/lib/fighters.ts` (16 originals, 4 moves each, plus quest fighters); move visuals in `lib/move-looks.ts`; forms in `lib/forms.ts`; entrances in `lib/spawn-intros.ts`.
+- Story: `lib/story.ts` (7 chapters x 10 stages) with bosses in `lib/bosses.ts`, drawn by `lib/boss-designs.ts`.
+- Hybrids/fusion: `hybridOf` in fighters.ts, saved via `lib/hybrids.ts`, fusion lab in `components/fusion-sheet.tsx`.
+- Fighters page (`/roster`) and Quests page (`/quests`, `lib/quests.ts`, unlock cutscenes in `components/quest-scenes.tsx`).
+- Sound and music are synthesised live with Web Audio (`lib/arena-sound.ts`, `lib/arena-music.ts`), volume saved in localStorage.
+- Not built yet: boss unlocks, boss phases, Double Elimination, Team Tournament, the last 3 quest fighters.
 Everything below this section is Stencil's platform documentation.
 
 ## Platform-managed — don't touch
