@@ -54,9 +54,9 @@ function QuestCard({ quest, n, stats, claimed, onClaim }: { quest: Quest; n: num
   const tone = claimed ? "success" : ready ? "warning" : def ? "info" : "neutral";
   const state = claimed ? "claimed" : ready ? "ready" : def ? "open" : "sealed";
   return (
-    <Panel className="h-full overflow-hidden">
+    <Panel className="flex h-full flex-col overflow-hidden">
       <div
-        className="relative border-b-2 border-border-subtle"
+        className="relative shrink-0 border-b-2 border-border-subtle"
         style={{ background: def ? `radial-gradient(ellipse at 50% 80%, ${def.glow.replace(")", " / 0.22)")}, transparent 70%), hsl(250 32% 10%)` : "hsl(250 32% 10%)" }}
       >
         {def ? (
@@ -70,7 +70,7 @@ function QuestCard({ quest, n, stats, claimed, onClaim }: { quest: Quest; n: num
           <Text id="quests.card.number" vars={{ n }} />
         </span>
       </div>
-      <PanelBody className="flex h-full flex-col gap-4">
+      <PanelBody className="flex flex-1 flex-col gap-4">
         <div className="flex flex-wrap items-start gap-2">
           <div className="min-w-0 flex-1">
             <Text id={`quests.list.${quest.id}.title` as StringKey} as="h3" className="font-display text-xl text-foreground" />
