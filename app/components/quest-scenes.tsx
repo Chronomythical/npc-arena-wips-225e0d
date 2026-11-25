@@ -2,6 +2,7 @@
 // and the unlock cutscene that plays its real entrance when a quest is claimed.
 import { useEffect, useRef, useState } from "react";
 import { Text } from "~stencil/ui/strings";
+import type { StringKey } from "~stencil/types/strings";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { W, H, GROUND, buildBackdrop, drawScene, newDemo, newGame, step } from "~/lib/arena-engine";
@@ -55,7 +56,7 @@ export function FighterPortrait({ def, locked, className }: { def: FighterDef; l
 }
 
 /** Full-screen unlock: the fighter's own entrance plays in the arena, then its name and the roster line come in. */
-export function UnlockCutscene({ def, onClose }: { def: FighterDef; onClose: () => void }) {
+export function UnlockCutscene({ def, onClose, eyebrow = "quests.cutscene.eyebrow", joined = "quests.cutscene.joined" }: { def: FighterDef; onClose: () => void; eyebrow?: StringKey; joined?: StringKey }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [landed, setLanded] = useState(false);
   useEffect(() => {
@@ -100,7 +101,7 @@ export function UnlockCutscene({ def, onClose }: { def: FighterDef; onClose: () 
       <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl border-4 border-border bg-black">
         <canvas ref={ref} width={W} height={H} aria-hidden="true" className="block h-auto w-full" />
         <div className="pointer-events-none absolute inset-x-0 top-0 flex flex-col items-center gap-2 bg-gradient-to-b from-black/80 to-transparent px-6 pt-6 pb-16 text-center">
-          <Text id="quests.cutscene.eyebrow" className="text-xs font-extrabold uppercase tracking-[0.15em] text-white/80 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300" />
+          <Text id={eyebrow} className="text-xs font-extrabold uppercase tracking-[0.15em] text-white/80 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300" />
           {landed && (
             <h2 id="unlock-name" className="font-display text-5xl tracking-[-0.02em] text-white motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:fade-in motion-safe:duration-300" style={{ textShadow: `0 0 18px ${def.glow}, 0 3px 0 #000` }}>
               {def.name}
@@ -109,7 +110,7 @@ export function UnlockCutscene({ def, onClose }: { def: FighterDef; onClose: () 
           {landed && <p className="text-lg text-white/90 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">{def.power}</p>}
         </div>
         <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-center gap-3 bg-gradient-to-t from-black/85 to-transparent px-6 pt-12 pb-6">
-          {landed && <Text id="quests.cutscene.joined" vars={{ name: def.name }} as="p" className="w-full text-center text-base text-white motion-safe:animate-in motion-safe:fade-in" />}
+          {landed && <Text id={joined} vars={{ name: def.name }} as="p" className="w-full text-center text-base text-white motion-safe:animate-in motion-safe:fade-in" />}
           <Button onClick={onClose} variant={landed ? "default" : "secondary"}>
             <Text id={landed ? "quests.cutscene.close" : "quests.cutscene.skip"} />
           </Button>

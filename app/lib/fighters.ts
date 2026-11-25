@@ -1,4 +1,5 @@
 // The 16 fighters and their power moves. Shared by the arena engine and the Fighters page.
+import { BOSSES, type BossId } from "./bosses";
 
 export type Power =
   | "pyro" | "cryo" | "electro" | "terra" | "aero" | "hydro" | "umbra" | "lux"
@@ -545,7 +546,8 @@ export function withTeamAttack(self: Power, partner: Power): FighterDef {
 }
 
 // ---------- Roster ids ----------
-// An original fighter is picked by its power id; a hybrid by its pair key ("lux+umbra", "pyro+pyro").
+// An original fighter is picked by its power id; a hybrid by its pair key ("lux+umbra", "pyro+pyro");
+// a Story boss, once beaten, by "boss:<id>" (its power id is only the voice it borrows, and two bosses share one).
 
 export type RosterId = string;
 
@@ -558,8 +560,17 @@ export function fusionOrder(a: Power, b: Power): [Power, Power] {
   return (ROSTER_ORDER.get(a) ?? 0) <= (ROSTER_ORDER.get(b) ?? 0) ? [a, b] : [b, a];
 }
 
+const BOSS_OF_DESIGN = Object.fromEntries(Object.entries(BOSSES).map(([id, d]) => [d.boss, id])) as Record<BossDesign, BossId>;
+/** The roster id a beaten Story boss is picked by. */
+export const bossRosterId = (id: BossId): RosterId => `boss:${id}`;
+const bossOfRosterId = (id: RosterId): BossId | null => {
+  const b = id.startsWith("boss:") ? id.slice(5) : "";
+  return b in BOSSES ? (b as BossId) : null;
+};
+
 /** The id a fighter is picked, saved and crowned by. */
-export const rosterIdOf = (d: FighterDef): RosterId => (d.parents ? hybridKey(d.parents[0], d.parents[1]) : d.id);
+export const rosterIdOf = (d: FighterDef): RosterId =>
+  d.boss ? bossRosterId(BOSS_OF_DESIGN[d.boss]) : d.parents ? hybridKey(d.parents[0], d.parents[1]) : d.id;
 
 const isPower = (x: string): x is Power => x in DEF_BY_ID;
 
@@ -571,9 +582,11 @@ export function parseHybridKey(key: string): [Power, Power] | null {
 }
 
 const hybridCache = new Map<RosterId, FighterDef>();
-/** The fighter behind any roster id: an original, or the hybrid its pair key makes. */
+/** The fighter behind any roster id: an original, a beaten boss, or the hybrid its pair key makes. */
 export function defOf(id: RosterId): FighterDef {
   if (isPower(id)) return DEF_BY_ID[id];
+  const boss = bossOfRosterId(id);
+  if (boss) return BOSSES[boss];
   let d = hybridCache.get(id);
   if (!d) {
     const pair = parseHybridKey(id);

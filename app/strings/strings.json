@@ -150,6 +150,13 @@
       "empty": "Earn quest fighters on the Quests page. Each one is strong enough to take on a Story boss alone.",
       "link": "See quests"
     },
+    "bosses": {
+      "title": "Bosses",
+      "count": "{{count}} of {{total}} beaten",
+      "empty": "Beat a Story boss and it joins your roster here, phases and all.",
+      "unlockEyebrow": "Boss defeated",
+      "unlockJoined": "{{name}} has joined your roster. Pick it in any mode except Story."
+    },
     "teamTour": {
       "sizeLabel": "Fighters per team",
       "shuffle": "Shuffle teams",
@@ -197,7 +204,8 @@
       "hybrid": "Hybrid",
       "form": "Form",
       "formAt": "Below {{at}}% health",
-      "quest": "Quest fighter"
+      "quest": "Quest fighter",
+      "boss": "Boss"
     },
     "forms": {
       "title": "Forms",
@@ -246,6 +254,12 @@
       "body": "Fuse two fighters and the hybrid joins the roster here. Hybrids you make in Story mode show up too."
     },
     "hybridsFiltered": "No hybrids with this style yet.",
+    "sectionBosses": "Bosses",
+    "bossCount": "{{count}} beaten",
+    "bossLocked": {
+      "title": "Not beaten yet",
+      "body": "Beat {{name}} at the end of Story chapter {{chapter}} to add it to your roster."
+    },
     "sectionQuest": "Quest fighters",
     "questCount": "{{count}} earned",
     "questLocked": {

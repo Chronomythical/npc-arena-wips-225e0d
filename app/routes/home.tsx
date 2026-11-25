@@ -16,7 +16,9 @@ import { Slider } from "~/components/ui/slider";
 import { PiSpeakerHighBold, PiSpeakerLowBold, PiSpeakerSlashBold } from "react-icons/pi";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
 import { cn } from "~/lib/utils";
-import { FIGHTERS, defOf, type FighterDef, type Power, type RosterId } from "~/lib/fighters";
+import { FIGHTERS, bossRosterId, defOf, type FighterDef, type Power, type RosterId } from "~/lib/fighters";
+import { BOSSES } from "~/lib/bosses";
+import { UnlockCutscene } from "~/components/quest-scenes";
 import { rememberHybrid, useHybrids } from "~/lib/hybrids";
 import { loadQuests, recordFight, recordTournament, unlockedOf, useQuests } from "~/lib/quests";
 import { FusionSheet } from "~/components/fusion-sheet";
@@ -29,7 +31,7 @@ import { drawBracket, recordWinner, nextMatch, champion, progress, started, entr
 import { BracketView, type TeamEntry } from "~/components/bracket-view";
 import { TitleScreen } from "~/components/title-screen";
 import { StoryPanel } from "~/components/story-panel";
-import { CHAPTERS, STAGES_PER_CHAPTER, canTeam, chapterOpen, fusionOrder, loadProgress, saveProgress, stageLineup, type Pair } from "~/lib/story";
+import { CHAPTERS, STAGES_PER_CHAPTER, bossesBeaten, canTeam, chapterOpen, fusionOrder, loadProgress, saveProgress, stageLineup, type Pair } from "~/lib/story";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -120,6 +122,10 @@ export default function Home() {
   // the chapter and stage of the fight on screen
   const stageRef = useRef<{ ch: number; i: number } | null>(null);
   const cleared = clearedAll[chapter] ?? 0;
+  // Story bosses beaten in this browser, playable everywhere but Story
+  const bosses = bossesBeaten(clearedAll).map(bossRosterId);
+  const [unlockedBoss, setUnlockedBoss] = useState<FighterDef | null>(null);
+  const closeUnlock = useCallback(() => setUnlockedBoss(null), []);
   useEffect(() => {
     const all = loadProgress().cleared;
     setClearedAll(all);
@@ -279,6 +285,12 @@ export default function Home() {
     matchRef.current = null;
     const at0 = stageRef.current;
     if (mode === "story" && at0 != null && g.winnerTeam === 0) {
+      // the first win over a chapter's boss adds it to the roster
+      const beaten = CHAPTERS[at0.ch]?.stages[at0.i]?.boss;
+      if (beaten && (clearedAll[at0.ch] ?? 0) < STAGES_PER_CHAPTER) {
+        const def = BOSSES[beaten];
+        window.setTimeout(() => setUnlockedBoss(def), 1600);
+      }
       setClearedAll((all) => {
         const next = [...all];
         next[at0.ch] = Math.max(next[at0.ch] ?? 0, at0.i + 1);
@@ -709,7 +721,7 @@ export default function Home() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {[...ALL, ...questers, ...hybrids].map((id) => (
+                    {[...ALL, ...questers, ...bosses, ...hybrids].map((id) => (
                       <SelectItem key={id} value={id}>
                         <FighterDot def={defOf(id)} />
                         {defOf(id).name}
@@ -738,6 +750,17 @@ export default function Home() {
             ) : (
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
                 {questers.map(chip)}
+              </div>
+            )}
+            <div className="mt-6 flex flex-wrap items-center gap-3" data-arena-bosses>
+              <Text id="arena.bosses.title" as="h3" className="font-display text-xl text-foreground" />
+              {bosses.length > 0 && <Text id="arena.bosses.count" vars={{ count: bosses.length, total: CHAPTERS.length }} className="text-sm text-muted-foreground tabular-nums" />}
+            </div>
+            {bosses.length === 0 ? (
+              <Text id="arena.bosses.empty" as="p" className="mt-3 max-w-prose text-sm text-muted-foreground" />
+            ) : (
+              <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                {bosses.map(chip)}
               </div>
             )}
             <div className="mt-6 flex flex-wrap items-center gap-3" data-arena-hybrids>
@@ -824,6 +847,7 @@ export default function Home() {
           </div>
         </>
       )}
+      {unlockedBoss && <UnlockCutscene def={unlockedBoss} eyebrow="arena.bosses.unlockEyebrow" joined="arena.bosses.unlockJoined" onClose={closeUnlock} />}
     </PageContainer>
   );
 }

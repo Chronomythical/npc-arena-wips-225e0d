@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import type { Route } from "./+types/roster";
 import { Text, useString } from "~stencil/ui/strings";
@@ -15,6 +15,8 @@ import {
 } from "~/components/design";
 import { cn } from "~/lib/utils";
 import { FIGHTERS, QUESTERS, defOf, type FighterDef, type Role } from "~/lib/fighters";
+import { BOSSES, BOSS_PHASES, type BossId } from "~/lib/bosses";
+import { bossChapter, bossesBeaten, loadProgress } from "~/lib/story";
 import { QUESTS, unlockedOf, useQuests } from "~/lib/quests";
 import { FighterPortrait } from "~/components/quest-scenes";
 import { FORMS, FORM_NAME, PERFECTED_FLAME, formsOf, type Form, type FormKind } from "~/lib/forms";
@@ -65,6 +67,7 @@ function TopBar() {
 }
 
 function FighterCard({ fighter, index, quest = false }: { fighter: Fighter; index: number | null; quest?: boolean }) {
+  const boss = fighter.boss;
   const hybrid = !!fighter.parents;
   return (
     <Panel className="h-full">
@@ -78,7 +81,9 @@ function FighterCard({ fighter, index, quest = false }: { fighter: Fighter; inde
             {fighter.name.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
-            {quest ? (
+            {boss ? (
+              <Text id="roster.card.boss" className="text-xs uppercase tracking-widest text-muted-foreground" />
+            ) : quest ? (
               <Text id="roster.card.quest" className="text-xs uppercase tracking-widest text-muted-foreground" />
             ) : index == null ? (
               <Text id="roster.card.hybrid" className="text-xs uppercase tracking-widest text-muted-foreground" />
@@ -104,7 +109,9 @@ function FighterCard({ fighter, index, quest = false }: { fighter: Fighter; inde
           <Text id="roster.card.ability" as="p" className="text-xs uppercase tracking-widest text-muted-foreground" />
           <p className="text-foreground-secondary">{fighter.ability}</p>
         </div>
-        {!hybrid && formsOf(fighter.id).map((fm) => <FormBlock key={fm.kind} form={fm} />)}
+        {boss
+          ? (BOSS_PHASES[boss] ?? []).map((fm) => <FormBlock key={fm.title} form={fm} />)
+          : !hybrid && formsOf(fighter.id).map((fm) => <FormBlock key={fm.kind} form={fm} />)}
         <div className="mt-auto border-t-2 border-border-subtle pt-4">
           <Text id="roster.card.moves" vars={{ count: fighter.moves.length }} as="p" className="text-xs uppercase tracking-widest text-muted-foreground tabular-nums" />
           <ul className="mt-2 flex flex-col gap-2">
@@ -200,6 +207,9 @@ export default function Roster() {
   const hybrids = hybridKeys.map(defOf);
   const shownHybrids = hybrids.filter((f) => role === "all" || f.role === role);
   const earned = unlockedOf(useQuests());
+  // Story progress lives in this browser, so it is read after the first render
+  const [beaten, setBeaten] = useState<BossId[]>([]);
+  useEffect(() => setBeaten(bossesBeaten(loadProgress().cleared)), []);
 
   return (
     <PageContainer>
@@ -293,6 +303,39 @@ export default function Roster() {
               )}
             </li>
           ))}
+        </ul>
+      </section>
+
+      <section className="mt-12" data-roster-bosses>
+        <SectionHeading
+          title={<Text id="roster.sectionBosses" />}
+          action={<Text id="roster.bossCount" vars={{ count: beaten.length }} className="text-sm text-muted-foreground tabular-nums" />}
+        />
+        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {(Object.keys(BOSSES) as BossId[]).map((id) => {
+            const b = BOSSES[id];
+            return (
+              <li key={id}>
+                {beaten.includes(id) ? (
+                  <FighterCard fighter={b} index={null} />
+                ) : (
+                  <Panel className="h-full overflow-hidden">
+                    <div className="border-b-2 border-border-subtle bg-[hsl(250_32%_10%)]">
+                      <FighterPortrait def={b} locked />
+                    </div>
+                    <PanelBody className="flex flex-col gap-3">
+                      <Text id="roster.card.boss" className="text-xs uppercase tracking-widest text-muted-foreground" />
+                      <Text id="roster.bossLocked.title" as="h3" className="font-display text-xl text-foreground" />
+                      <Text id="roster.bossLocked.body" vars={{ name: b.name, chapter: bossChapter(id) }} as="p" className="text-sm text-foreground-secondary" />
+                      <Button asChild variant="outline" size="sm" className="self-start">
+                        <Link to="/"><Text id="roster.cta" /></Link>
+                      </Button>
+                    </PanelBody>
+                  </Panel>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 

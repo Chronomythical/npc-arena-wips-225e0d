@@ -185,3 +185,13 @@ export function saveProgress(p: Progress) {
   }
 }
 
+
+/** The Story bosses this browser has beaten, in chapter order. Each one is a fighter you can pick outside Story. */
+export const bossesBeaten = (cleared: number[]): BossId[] =>
+  CHAPTERS.flatMap((ch, i) => {
+    const boss = ch.stages[STAGES_PER_CHAPTER - 1]?.boss;
+    return boss && (cleared[i] ?? 0) >= STAGES_PER_CHAPTER ? [boss] : [];
+  });
+
+/** The chapter (1 to 7) each boss closes. */
+export const bossChapter = (id: BossId): number => CHAPTERS.findIndex((ch) => ch.stages.some((s) => s.boss === id)) + 1;
