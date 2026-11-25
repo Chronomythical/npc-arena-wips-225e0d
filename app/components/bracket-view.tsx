@@ -1,3 +1,4 @@
+import { createContext, useContext } from "react";
 import { Text, type StringKey } from "~stencil/ui/strings";
 import { cn } from "~/lib/utils";
 import { defOf, type RosterId } from "~/lib/fighters";
@@ -11,6 +12,10 @@ const ROUND_KEY: Record<number, StringKey> = {
   8: "arena.bracket.round16",
 };
 
+/** Team Tournament: each entrant is a team, shown by its colour, name and members. */
+export type TeamEntry = { name: string; color: string; members: RosterId[] };
+const TeamsContext = createContext<Record<string, TeamEntry> | null>(null);
+
 const label = "mb-3 text-xs font-extrabold uppercase tracking-[0.1em] text-muted-foreground";
 
 /**
@@ -18,7 +23,15 @@ const label = "mb-3 text-xs font-extrabold uppercase tracking-[0.1em] text-muted
  * Double elimination: the winners bracket, the losers bracket, then the grand final
  * (and its reset, once it is needed) beside the champion. The current match is outlined.
  */
-export function BracketView({ bracket, current }: { bracket: Bracket; current: MatchRef | null }) {
+export function BracketView({ bracket, current, teams }: { bracket: Bracket; current: MatchRef | null; teams?: Record<string, TeamEntry> }) {
+  return (
+    <TeamsContext.Provider value={teams ?? null}>
+      <Brackets bracket={bracket} current={current} />
+    </TeamsContext.Provider>
+  );
+}
+
+function Brackets({ bracket, current }: { bracket: Bracket; current: MatchRef | null }) {
   const champ = champion(bracket);
   if (bracket.format === "single") {
     return (
@@ -137,11 +150,31 @@ function Side({ id, none, winner }: { id: RosterId | null; none: boolean; winner
 }
 
 function Entrant({ id, strong, lost }: { id: RosterId; strong?: boolean; lost?: boolean }) {
+  const team = useContext(TeamsContext)?.[id];
+  if (team) return <TeamEntrant team={team} strong={strong} lost={lost} />;
   const def = defOf(id);
   return (
     <span className={cn("flex items-center gap-2 text-sm", strong ? "font-semibold text-foreground" : lost ? "text-muted-foreground" : "text-foreground-secondary")}>
       <FighterDot def={def} />
       <span className="truncate">{def.name}</span>
+    </span>
+  );
+}
+
+function TeamEntrant({ team, strong, lost }: { team: TeamEntry; strong?: boolean; lost?: boolean }) {
+  const names = team.members.map((m) => defOf(m).name).join(", ");
+  return (
+    <span className={cn("flex min-w-0 flex-col gap-1 text-sm", strong ? "font-semibold text-foreground" : lost ? "text-muted-foreground" : "text-foreground-secondary")} title={names} data-team-entrant>
+      <span className="flex items-center gap-2">
+        <span aria-hidden className="h-4 w-1.5 shrink-0 rounded-full" style={{ background: team.color }} />
+        <Text id="arena.teams.tag" vars={{ team: team.name }} className="truncate" />
+      </span>
+      <span className="flex flex-wrap items-center gap-1 pl-3.5">
+        {team.members.map((m) => (
+          <FighterDot key={m} def={defOf(m)} />
+        ))}
+        <span className="sr-only">{names}</span>
+      </span>
     </span>
   );
 }

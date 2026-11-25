@@ -10,6 +10,7 @@
       "ffa": "Free for all",
       "teams": "Teams",
       "tournament": "Tournament",
+      "teamTournament": "Team Tournament",
       "juggernaut": "Juggernaut"
     },
     "pick": {
@@ -23,7 +24,9 @@
       "tournamentHint": "Pick 3 to 16 fighters for the bracket.",
       "lockedHint": "Picks are locked until this tournament ends.",
       "juggHint": "Pick five challengers to face the juggernaut.",
-      "storyHint": "Pick a stage, then the pair you bring into it."
+      "storyHint": "Pick a stage, then the pair you bring into it.",
+      "teamTourHint": "Teams of {{size}}: pick enough fighters for 3 to {{max}} full teams. Fighters join teams in the order you pick them.",
+      "teamTourLocked": "Picks are locked until this team tournament ends."
     },
     "controls": {
       "start": "Start",
@@ -83,7 +86,12 @@
       "nextChapter": "Next chapter",
       "dropped": "{{name}} drops to the losers bracket",
       "knockedOut": "{{name}} is knocked out",
-      "resetNeeded": "{{name}} forces a reset match!"
+      "resetNeeded": "{{name}} forces a reset match!",
+      "teamMatch": "{{team}} team wins the match",
+      "teamChampion": "{{team}} team wins the tournament!",
+      "teamDropped": "{{name}} team drops to the losers bracket",
+      "teamKnockedOut": "{{name}} team is knocked out",
+      "teamResetNeeded": "{{name}} team forces a reset match!"
     },
     "idle": "Press Start to begin the battle",
     "teams": {
@@ -93,7 +101,11 @@
       "name1": "Blue",
       "name2": "Gold",
       "name3": "Green",
-      "tag": "{{team}} team"
+      "tag": "{{team}} team",
+      "name4": "Purple",
+      "name5": "Orange",
+      "name6": "Teal",
+      "name7": "Pink"
     },
     "bracket": {
       "title": "Bracket",
@@ -137,6 +149,12 @@
       "title": "Quest fighters",
       "empty": "Earn quest fighters on the Quests page. Each one is strong enough to take on a Story boss alone.",
       "link": "See quests"
+    },
+    "teamTour": {
+      "sizeLabel": "Fighters per team",
+      "shuffle": "Shuffle teams",
+      "rosterTitle": "Teams",
+      "members": "{{team}} team: {{names}}"
     }
   },
   "title": {
@@ -152,6 +170,7 @@
       "ffa": "Everyone in, free for all.",
       "teams": "Pick sides and fight together.",
       "tournament": "A bracket, round by round.",
+      "teamTournament": "Teams fight through a bracket together.",
       "juggernaut": "Five challengers against one boss."
     }
   },

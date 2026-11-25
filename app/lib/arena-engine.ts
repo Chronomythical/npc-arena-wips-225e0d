@@ -407,7 +407,7 @@ export type Game = {
 let feedId = 0;
 
 /** Team colours, in team order. Names live in the screen's copy. */
-export const TEAM_COLORS = ["hsl(0 82% 60%)", "hsl(212 90% 62%)", "hsl(46 100% 58%)", "hsl(138 62% 50%)"] as const;
+export const TEAM_COLORS = ["hsl(0 82% 60%)", "hsl(212 90% 62%)", "hsl(46 100% 58%)", "hsl(138 62% 50%)", "hsl(276 70% 64%)", "hsl(24 95% 56%)", "hsl(178 72% 42%)", "hsl(326 80% 64%)"] as const;
 
 /** Opponents: everyone in free for all, only the other teams in a team fight. */
 const foe = (a: Fighter | undefined, b: Fighter | undefined) => !!a && !!b && a !== b && (a.team < 0 || a.team !== b.team);

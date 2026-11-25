@@ -26,7 +26,7 @@ import { arenaSound } from "~/lib/arena-sound";
 import { arenaMusic } from "~/lib/arena-music";
 import { MusicControl } from "~/components/music-control";
 import { drawBracket, recordWinner, nextMatch, champion, progress, started, entrants, type Bracket, type Format, type MatchRef } from "~/lib/bracket";
-import { BracketView } from "~/components/bracket-view";
+import { BracketView, type TeamEntry } from "~/components/bracket-view";
 import { TitleScreen } from "~/components/title-screen";
 import { StoryPanel } from "~/components/story-panel";
 import { CHAPTERS, STAGES_PER_CHAPTER, canTeam, chapterOpen, fusionOrder, loadProgress, saveProgress, stageLineup, type Pair } from "~/lib/story";
@@ -39,34 +39,50 @@ export function meta({}: Route.MetaArgs) {
 }
 
 type Status = "ready" | "running" | "paused" | "finished";
-type Mode = "story" | "duel" | "ffa" | "teams" | "tournament" | "juggernaut";
+type Mode = "story" | "duel" | "ffa" | "teams" | "tournament" | "teamTournament" | "juggernaut";
 type Result = { name: string | null; id: RosterId | null; team: number | null };
 
 type Snapshot = { alive: { key: number; name: string; color: string; hp: number; maxHp: number; kills: number; team: number; jugg: boolean }[]; feed: FeedItem[] };
 
 const SPEEDS = [1, 2, 4] as const;
-const MODES: Mode[] = ["story", "duel", "ffa", "teams", "tournament", "juggernaut"];
+const MODES: Mode[] = ["story", "duel", "ffa", "teams", "tournament", "teamTournament", "juggernaut"];
 /** Juggernaut mode: five challengers (team 0) against one juggernaut (team 1), which goes last. */
 const CHALLENGERS = 5;
 const JUGG_TEAMS = [...Array(CHALLENGERS).fill(0), 1] as number[];
 const TEAM_COUNTS = [2, 3, 4] as const;
 const FORMATS: Format[] = ["single", "double"];
+/** Team Tournament: fighters per team, and the most fighters a bracket takes. */
+const TEAM_SIZES = [2, 3] as const;
+const MAX_PICKS = 16;
+/** A team's place in the bracket; its number is its colour and name. */
+const teamId = (i: number): RosterId => `team${i}`;
+const teamIndex = (id: RosterId) => Number(id.slice(4));
+/** Picks split into full teams, in pick order; a part team left over sits out. */
+const teamsOfPicks = (ids: RosterId[], size: number): RosterId[][] =>
+  Array.from({ length: Math.min(Math.floor(ids.length / size), MAX_PICKS / 2) }, (_, t) => ids.slice(t * size, t * size + size));
 /** What a double-elimination result means for the fighter who lost it. */
-type Fallout = { name: string; key: "arena.winner.dropped" | "arena.winner.knockedOut" | "arena.winner.resetNeeded" };
-const TEAM_KEYS: StringKey[] = ["arena.teams.name0", "arena.teams.name1", "arena.teams.name2", "arena.teams.name3"];
+type Fallout = {
+  name: string;
+  key: "arena.winner.dropped" | "arena.winner.knockedOut" | "arena.winner.resetNeeded" | "arena.winner.teamDropped" | "arena.winner.teamKnockedOut" | "arena.winner.teamResetNeeded";
+};
+const TEAM_KEYS: StringKey[] = [
+  "arena.teams.name0", "arena.teams.name1", "arena.teams.name2", "arena.teams.name3",
+  "arena.teams.name4", "arena.teams.name5", "arena.teams.name6", "arena.teams.name7",
+];
 const HINTS: Record<Mode, StringKey> = {
   story: "arena.pick.storyHint",
   duel: "arena.pick.duelHint",
   ffa: "arena.pick.ffaHint",
   teams: "arena.pick.teamsHint",
   tournament: "arena.pick.tournamentHint",
+  teamTournament: "arena.pick.teamTourHint",
   juggernaut: "arena.pick.juggHint",
 };
 const ALL: RosterId[] = FIGHTERS.map((f) => f.id);
 /** Picks are roster ids: an original fighter or a saved hybrid. */
 const defsOf = (ids: RosterId[]) => ids.map(defOf);
 const defaultPicks = (m: Mode, jugg: RosterId): RosterId[] =>
-  m === "duel" ? ["pyro", "cryo"] : m === "tournament" ? ALL.slice(0, 8) : m === "juggernaut" ? ALL.filter((id) => id !== jugg).slice(0, CHALLENGERS) : ALL;
+  m === "duel" ? ["pyro", "cryo"] : m === "tournament" || m === "teamTournament" ? ALL.slice(0, 8) : m === "juggernaut" ? ALL.filter((id) => id !== jugg).slice(0, CHALLENGERS) : ALL;
 
 function shuffled<T>(xs: T[]): T[] {
   const a = [...xs];
@@ -91,6 +107,10 @@ export default function Home() {
   const [bracket, setBracket] = useState<Bracket | null>(null);
   const [format, setFormat] = useState<Format>("single");
   const [fallout, setFallout] = useState<Fallout | null>(null);
+  // Team Tournament: its own bracket of teams, and the teams it was drawn from
+  const [teamSize, setTeamSize] = useState<number>(2);
+  const [teamBracket, setTeamBracket] = useState<Bracket | null>(null);
+  const [teamLineup, setTeamLineup] = useState<RosterId[][]>([]);
   const [jugg, setJugg] = useState<RosterId>("pyro");
   // Story mode: each chapter's cleared count is read from this browser after the first render.
   const [clearedAll, setClearedAll] = useState<number[]>(() => CHAPTERS.map(() => 0));
@@ -175,7 +195,11 @@ export default function Home() {
   const speedAria = useString("arena.controls.speedAria");
   const juggAria = useString("arena.jugg.label");
   const formatAria = useString("arena.bracket.formatLabel");
-  const teamNames = [useString("arena.teams.name0"), useString("arena.teams.name1"), useString("arena.teams.name2"), useString("arena.teams.name3")];
+  const teamNames = [
+    useString("arena.teams.name0"), useString("arena.teams.name1"), useString("arena.teams.name2"), useString("arena.teams.name3"),
+    useString("arena.teams.name4"), useString("arena.teams.name5"), useString("arena.teams.name6"), useString("arena.teams.name7"),
+  ];
+  const teamSizeAria = useString("arena.teamTour.sizeLabel");
   const matchRef = useRef<MatchRef | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -187,12 +211,35 @@ export default function Home() {
   speedRef.current = speed;
 
   const validFor = (m: Mode, n: number) =>
-    m === "story" ? stage <= cleared : m === "duel" ? n === 2 : m === "teams" ? n >= teamCount * 2 && n <= 16 : m === "juggernaut" ? n === CHALLENGERS && !picked.includes(jugg) : n >= 3 && n <= 16;
+    m === "story" ? stage <= cleared : m === "duel" ? n === 2 : m === "teams" ? n >= teamCount * 2 && n <= 16 : m === "teamTournament" ? n % teamSize === 0 && n / teamSize >= 3 && n <= MAX_PICKS : m === "juggernaut" ? n === CHALLENGERS && !picked.includes(jugg) : n >= 3 && n <= 16;
   const valid = validFor(mode, picked.length);
   const teamsFor = (ids: RosterId[]) => ids.map((_, i) => i % teamCount);
-  const upNext = mode === "tournament" && bracket ? nextMatch(bracket) : null;
-  const champ = bracket ? champion(bracket) : null;
-  const tourLive = mode === "tournament" && !!bracket && started(bracket) && !champ;
+  // Tournament and Team Tournament share the bracket flow; each keeps its own bracket.
+  const tourMode = mode === "tournament" || mode === "teamTournament";
+  const teamTour = mode === "teamTournament";
+  const bk = teamTour ? teamBracket : mode === "tournament" ? bracket : null;
+  const setBk = teamTour ? setTeamBracket : setBracket;
+  const upNext = tourMode && bk ? nextMatch(bk) : null;
+  const champ = bk ? champion(bk) : null;
+  const tourLive = tourMode && !!bk && started(bk) && !champ;
+  /** A bracket entrant's name: a fighter, or a team's colour name. */
+  const entrantName = (id: RosterId) => (teamTour ? teamNames[teamIndex(id)] ?? "" : defOf(id).name);
+  const teamEntries: Record<string, TeamEntry> = Object.fromEntries(
+    teamLineup.map((members, i) => [teamId(i), { name: teamNames[i] ?? "", color: TEAM_COLORS[i % TEAM_COLORS.length], members }]),
+  );
+  /** Both teams of a team match, with each fighter's team number so the arena colours them to match the bracket. */
+  const matchLineup = (a: RosterId, b: RosterId) => {
+    const ia = teamIndex(a);
+    const ib = teamIndex(b);
+    const A = teamLineup[ia] ?? [];
+    const B = teamLineup[ib] ?? [];
+    return { ids: [...A, ...B], teams: [...A.map(() => ia), ...B.map(() => ib)] };
+  };
+  const drawTeams = () => {
+    const lineup = teamsOfPicks(picked, teamSize);
+    setTeamLineup(lineup);
+    setTeamBracket(validFor("teamTournament", picked.length) ? drawBracket(lineup.map((_, i) => teamId(i)), format) : null);
+  };
 
   // Called from the animation loop the moment a fight is decided.
   const finishRef = useRef<(g: Game) => void>(() => {});
@@ -200,22 +247,28 @@ export default function Home() {
     statusRef.current = "finished";
     setResult({ name: g.winner, id: g.winnerId, team: g.winnerTeam });
     const at = matchRef.current;
-    if (mode === "tournament" && at && g.winnerId) {
-      const id = g.winnerId;
-      const next = bracket ? recordWinner(bracket, at, id) : bracket;
-      setBracket(next);
+    // the bracket entrant who won: a fighter, or in Team Tournament the team left standing
+    const won = teamTour ? (g.winnerTeam != null ? teamId(g.winnerTeam) : null) : g.winnerId;
+    if (tourMode && at != null && won) {
+      const next = bk ? recordWinner(bk, at, won) : bk;
+      setBk(next);
       // double elimination: say where the loser goes
       const played = next?.format === "double" ? next.matches[at] : null;
       if (played?.loser && !champion(next!)) {
         const grandFinal = played.section === "grand" && !played.reset;
         setFallout(
           grandFinal
-            ? { name: defOf(played.winner!).name, key: "arena.winner.resetNeeded" }
-            : { name: defOf(played.loser).name, key: played.section === "winners" ? "arena.winner.dropped" : "arena.winner.knockedOut" },
+            ? { name: entrantName(played.winner!), key: teamTour ? "arena.winner.teamResetNeeded" : "arena.winner.resetNeeded" }
+            : {
+                name: entrantName(played.loser),
+                key: played.section === "winners"
+                  ? teamTour ? "arena.winner.teamDropped" : "arena.winner.dropped"
+                  : teamTour ? "arena.winner.teamKnockedOut" : "arena.winner.knockedOut",
+              },
         );
       } else setFallout(null);
       // the final just crowned a champion: that counts toward quests
-      if (next && champion(next) && !(bracket && champion(bracket))) recordTournament();
+      if (next && champion(next) && !(bk && champion(bk))) recordTournament();
     }
     // every fight played to the end counts toward quests
     recordFight({
@@ -285,16 +338,24 @@ export default function Home() {
 
   // A fresh bracket whenever the picks change, unless a tournament is already under way.
   useEffect(() => {
-    if (mode !== "tournament") return;
-    setBracket((cur) => (cur && started(cur) && !champion(cur) ? cur : validFor("tournament", picked.length) ? drawBracket(picked, format) : null));
+    if (mode === "tournament") {
+      setBracket((cur) => (cur && started(cur) && !champion(cur) ? cur : validFor("tournament", picked.length) ? drawBracket(picked, format) : null));
+    } else if (mode === "teamTournament") {
+      if (teamBracket && started(teamBracket) && !champion(teamBracket)) return;
+      drawTeams();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, picked, format]);
+  }, [mode, picked, format, teamSize]);
 
   // Idle line-up while waiting to start: the next pairing in a tournament, the picks otherwise.
-  const upA = upNext != null && bracket ? bracket.matches[upNext].a : null;
-  const upB = upNext != null && bracket ? bracket.matches[upNext].b : null;
+  const upA = upNext != null && bk ? bk.matches[upNext].a : null;
+  const upB = upNext != null && bk ? bk.matches[upNext].b : null;
   useEffect(() => {
     if (mode === "tournament") previewRef.current = newGame(upA && upB ? defsOf([upA, upB]) : [], true);
+    else if (mode === "teamTournament") {
+      const { ids, teams } = upA && upB ? matchLineup(upA, upB) : { ids: [], teams: [] };
+      previewRef.current = newGame(defsOf(ids), true, ids.length ? teams : undefined);
+    }
     else if (mode === "story") {
       const { defs, teams } = stageLineup(pair, CHAPTERS[chapter].stages[stage]);
       previewRef.current = newGame(defs, true, teams);
@@ -302,7 +363,8 @@ export default function Home() {
       const ids = [...picked.filter((id) => id !== jugg), jugg];
       previewRef.current = newGame(defsOf(ids), true, ids.map((_, i) => (i === ids.length - 1 ? 1 : 0)), ids.length - 1);
     } else previewRef.current = newGame(defsOf(picked), true, mode === "teams" ? picked.map((_, i) => i % teamCount) : undefined);
-  }, [picked, mode, teamCount, upA, upB, jugg, pair, stage, chapter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [picked, mode, teamCount, upA, upB, jugg, pair, stage, chapter, teamLineup]);
 
   const begin = (g: Game) => {
     gameRef.current = g;
@@ -325,12 +387,15 @@ export default function Home() {
       if (stage <= cleared) startStage(stage);
       return;
     }
-    if (mode === "tournament") {
-      const at = bracket ? nextMatch(bracket) : null;
-      const m = at != null && bracket ? bracket.matches[at] : null;
+    if (tourMode) {
+      const at = bk ? nextMatch(bk) : null;
+      const m = at != null && bk ? bk.matches[at] : null;
       if (at == null || !m?.a || !m.b) return;
       matchRef.current = at;
-      begin(newGame(defsOf([m.a, m.b])));
+      if (teamTour) {
+        const { ids, teams } = matchLineup(m.a, m.b);
+        begin(newGame(defsOf(ids), false, teams));
+      } else begin(newGame(defsOf([m.a, m.b])));
       return;
     }
     if (!valid) return;
@@ -352,7 +417,8 @@ export default function Home() {
 
   const newTournament = () => {
     restart();
-    setBracket(validFor("tournament", picked.length) ? drawBracket(picked, format) : null);
+    if (teamTour) drawTeams();
+    else setBracket(validFor("tournament", picked.length) ? drawBracket(picked, format) : null);
   };
 
   const toggle = (id: RosterId) => {
@@ -377,8 +443,13 @@ export default function Home() {
     setMode(m);
     // coming back to a tournament in progress keeps its bracket and its line-up
     const resume = m === "tournament" && bracket && started(bracket) && !champion(bracket);
-    setPicked(resume ? entrants(bracket) : defaultPicks(m, jugg));
+    const resumeTeams = m === "teamTournament" && teamBracket && started(teamBracket) && !champion(teamBracket);
+    setPicked(resume ? entrants(bracket) : resumeTeams ? teamLineup.flat() : defaultPicks(m, jugg));
     if (resume) setFormat(bracket.format);
+    if (resumeTeams) {
+      setFormat(teamBracket.format);
+      setTeamSize(teamLineup[0]?.length ?? 2);
+    }
   };
 
   const enterFromTitle = (m: Mode) => {
@@ -394,12 +465,23 @@ export default function Home() {
       on={picked.includes(id) || (mode === "juggernaut" && id === jugg)}
       disabled={locked || (mode === "juggernaut" && id === jugg)}
       onClick={() => toggle(id)}
-      team={mode === "teams" && picked.includes(id) ? picked.indexOf(id) % teamCount : null}
+      team={teamOfPick(id)}
       juggernaut={mode === "juggernaut" && id === jugg}
     />
   );
   const locked = fighting || tourLive;
-  const tour = bracket ? progress(bracket) : null;
+  const tour = bk ? progress(bk) : null;
+  /** The team a picked fighter is on: in Teams by turns, in Team Tournament in blocks of the team size. */
+  function teamOfPick(id: RosterId): number | null {
+    const i = picked.indexOf(id);
+    if (i < 0) return null;
+    if (mode === "teams") return i % teamCount;
+    if (teamTour) {
+      const t = Math.floor(i / teamSize);
+      return t < teamsOfPicks(picked, teamSize).length ? t : null;
+    }
+    return null;
+  }
   const tone = status === "running" ? "success" : status === "paused" ? "warning" : status === "finished" ? "info" : "neutral";
 
   return (
@@ -439,7 +521,7 @@ export default function Home() {
             <PanelBody className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2">
                 {status === "ready" && (
-                  <Button onClick={start} disabled={mode === "tournament" ? !upNext : !valid}><Text id="arena.controls.start" /></Button>
+                  <Button onClick={start} disabled={tourMode ? upNext == null : !valid}><Text id="arena.controls.start" /></Button>
                 )}
                 {status === "running" && (
                   <Button variant="secondary" onClick={() => setStatus("paused")}><Text id="arena.controls.pause" /></Button>
@@ -450,7 +532,7 @@ export default function Home() {
                 {status !== "ready" && (
                   <Button variant="outline" onClick={restart}><Text id="arena.controls.restart" /></Button>
                 )}
-                {mode === "tournament" && tour && tour.total > 0 && !champ && (
+                {tourMode && tour && tour.total > 0 && !champ && (
                   <Text id="arena.bracket.matchOf" vars={{ n: Math.min(tour.played + (status === "finished" ? 0 : 1), tour.total), total: tour.total }} className="text-sm text-muted-foreground tabular-nums" />
                 )}
                 <div className="ml-auto flex items-center gap-2" role="group" aria-label={speedAria}>
@@ -491,7 +573,7 @@ export default function Home() {
                     {mode === "story" ? (
                       <Text id="arena.idleStory" vars={{ n: stage + 1 }} as="p" className="rounded-full bg-card px-6 py-3 text-center font-display text-lg text-foreground" />
                     ) : (
-                      <Text id={mode === "tournament" ? "arena.idleTournament" : "arena.idle"} as="p" className="rounded-full bg-card px-6 py-3 text-center font-display text-lg text-foreground" />
+                      <Text id={tourMode ? "arena.idleTournament" : "arena.idle"} as="p" className="rounded-full bg-card px-6 py-3 text-center font-display text-lg text-foreground" />
                     )}
                   </div>
                 )}
@@ -512,7 +594,7 @@ export default function Home() {
                       <WinnerBanner
                         mode={mode}
                         result={result}
-                        champ={champ ? defOf(champ).name : null}
+                        champ={champ ? entrantName(champ) : null}
                         teamName={result?.team != null ? teamNames[result.team] : null}
                         teamColor={result?.team != null ? TEAM_COLORS[result.team] : null}
                         onAgain={start}
@@ -527,8 +609,8 @@ export default function Home() {
             </PanelBody>
           </Panel>
 
-          {mode === "tournament" && (
-            <section>
+          {tourMode && (
+            <section data-bracket-section>
               <SectionHeading
                 title={<Text id="arena.bracket.title" />}
                 action={
@@ -537,10 +619,10 @@ export default function Home() {
               />
               <Panel className="mt-3">
                 <PanelBody>
-                  {bracket ? (
-                    <BracketView bracket={bracket} current={fighting ? null : upNext} />
+                  {bk ? (
+                    <BracketView bracket={bk} current={fighting ? null : upNext} teams={teamTour ? teamEntries : undefined} />
                   ) : (
-                    <Text id="arena.pick.tournamentHint" as="p" className="text-sm text-muted-foreground" />
+                    <Text id={HINTS[mode]} vars={{ size: teamSize, max: MAX_PICKS / teamSize >> 0 }} as="p" className="text-sm text-muted-foreground" />
                   )}
                 </PanelBody>
               </Panel>
@@ -568,7 +650,7 @@ export default function Home() {
                   </Button>
                 ))}
               </div>
-              <Text id={tourLive ? "arena.pick.lockedHint" : HINTS[mode]} className={cn("text-sm", valid ? "text-muted-foreground" : "text-error")} />
+              <Text id={tourLive ? (teamTour ? "arena.pick.teamTourLocked" : "arena.pick.lockedHint") : HINTS[mode]} vars={{ size: teamSize, max: MAX_PICKS / teamSize >> 0 }} className={cn("text-sm", valid ? "text-muted-foreground" : "text-error")} />
               {mode !== "story" && <Text id="arena.pick.count" vars={{ count: picked.length }} className="ml-auto text-sm text-muted-foreground tabular-nums" />}
             </div>
             {mode === "teams" && (
@@ -584,7 +666,20 @@ export default function Home() {
                 </Button>
               </div>
             )}
-            {mode === "tournament" && (
+            {teamTour && (
+              <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label={teamSizeAria} data-team-size-picker>
+                <Text id="arena.teamTour.sizeLabel" className="text-sm text-muted-foreground" />
+                {TEAM_SIZES.map((n) => (
+                  <Button key={n} size="sm" variant={teamSize === n ? "default" : "outline"} disabled={locked} aria-pressed={teamSize === n} onClick={() => setTeamSize(n)} className="tabular-nums">
+                    {n}
+                  </Button>
+                ))}
+                <Button size="sm" variant="ghost" disabled={locked || picked.length < 2} onClick={() => setPicked((cur) => shuffled(cur))}>
+                  <Text id="arena.teamTour.shuffle" />
+                </Button>
+              </div>
+            )}
+            {tourMode && (
               <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label={formatAria} data-format-picker>
                 <Text id="arena.bracket.formatLabel" className="text-sm text-muted-foreground" />
                 {FORMATS.map((f) => (
@@ -762,8 +857,9 @@ function WinnerBanner({ mode, result, champ, teamName, teamColor, onAgain, onNew
   fallout: Fallout | null;
 }) {
   const title = "font-display text-3xl text-foreground";
-  if (mode === "tournament") {
-    if (!result?.id) {
+  if (mode === "tournament" || mode === "teamTournament") {
+    const teamTour = mode === "teamTournament";
+    if (teamTour ? result?.team == null : !result?.id) {
       return (
         <>
           <Text id="arena.winner.doubleKo" as="p" className={cn(title, "max-w-sm text-balance")} />
@@ -774,14 +870,25 @@ function WinnerBanner({ mode, result, champ, teamName, teamColor, onAgain, onNew
     if (champ) {
       return (
         <>
-          <Text id="arena.winner.champion" vars={{ name: champ }} as="p" className={title} />
+          {teamTour ? (
+            <Text id="arena.winner.teamChampion" vars={{ team: champ }} as="p" className={cn(title, "max-w-sm text-balance")} />
+          ) : (
+            <Text id="arena.winner.champion" vars={{ name: champ }} as="p" className={title} />
+          )}
           <Button className="mt-4" onClick={onNewTournament}><Text id="arena.winner.newTournament" /></Button>
         </>
       );
     }
     return (
       <>
-        <Text id="arena.winner.match" vars={{ name: result.name ?? "" }} as="p" className={title} />
+        {teamTour ? (
+          <p className="flex items-center justify-center gap-3">
+            <span className="size-5 shrink-0 rounded-full border-2 border-foreground" style={{ background: teamColor ?? undefined }} />
+            <Text id="arena.winner.teamMatch" vars={{ team: teamName ?? "" }} className={title} />
+          </p>
+        ) : (
+          <Text id="arena.winner.match" vars={{ name: result?.name ?? "" }} as="p" className={title} />
+        )}
         {fallout && <Text id={fallout.key} vars={{ name: fallout.name }} as="p" className="mt-2 text-base text-foreground-secondary" />}
         <Button className="mt-4" onClick={onAgain}><Text id="arena.winner.nextMatch" /></Button>
       </>
