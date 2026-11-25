@@ -232,6 +232,27 @@ const FORM_LOOKS: Record<string, Look> = {
   "rewound-blizzard": F("hourglass-icicles", "hsl(200 80% 82%)", "hsl(44 95% 80%)", "flake", false, 300, "shatter"),
   "eternal-stop": F("time-stop", "hsl(200 90% 80%)", "hsl(0 0% 100%)", "glyph", true, 0, "clock"),
   "absolute-winter": F("glacial-age", "hsl(200 80% 88%)", "hsl(0 0% 100%)", "flake", false, 20),
+  // The Riftmaker
+  "kaleidoscope": F("mirror-shards", "hsl(318 90% 62%)", "hsl(186 100% 82%)", "shard", true, 200, "cross"),
+  "mirror-step": F("fold-space", "hsl(0 0% 96%)", "hsl(318 100% 74%)", "shard", true, 0, "portal"),
+  "gravity-fold": F("dimension-tear", "hsl(252 70% 14%)", "hsl(186 100% 78%)", "star", true, 0, "implode"),
+  "falling-sky": F("light-lances", "hsl(252 60% 40%)", "hsl(318 100% 84%)", "star", true, 200, "portal"),
+  "rewrite": F("rift-burst", "hsl(186 100% 56%)", "hsl(318 100% 76%)", "pixel", true, 0, "portal"),
+  "infinite-mirror": F("dimension-tear", "hsl(0 0% 100%)", "hsl(318 100% 70%)", "shard", true, 100, "cross"),
+  // The Hollow King
+  "reaver-throw": F("reaper-scythe", "hsl(165 22% 20%)", "hsl(152 100% 70%)", "smoke", false, -60, "slash"),
+  "ghost-march": F("reaper-scythe", "hsl(160 30% 30%)", "hsl(150 100% 80%)", "smoke", false, -80, "slash"),
+  "bone-spires": F("bone-zone", "hsl(44 30% 84%)", "hsl(152 92% 64%)", "dust", false, 600, "crater"),
+  "banshee-wail": F("wailing-souls", "hsl(150 60% 70%)", "hsl(0 0% 100%)", "smoke", false, -100, "ripple"),
+  "final-harvest": F("soul-harvest", "hsl(165 40% 8%)", "hsl(150 100% 76%)", "dot", true, -60, "implode"),
+  "requiem": F("graveyard", "hsl(170 40% 8%)", "hsl(150 100% 72%)", "smoke", false, -80),
+  // The Black Sun
+  "sunspot-volley": F("eclipse-disc", "hsl(20 50% 10%)", "hsl(40 100% 64%)", "ember", true, -120, "flare"),
+  "sunrush": F("corona-edge", "hsl(26 100% 52%)", "hsl(48 100% 76%)", "ember", true, -200, "flare"),
+  "umbral-ray": F("solar-flare", "hsl(250 40% 8%)", "hsl(44 100% 72%)", "spark", true, 0, "starburst"),
+  "shadow-flare": F("prominence", "hsl(250 40% 10%)", "hsl(44 100% 70%)", "smoke", false, -200, "starburst"),
+  "supernova": F("total-eclipse", "hsl(40 100% 70%)", "hsl(0 0% 100%)", "star", true, -100, "flare"),
+  "endless-night": F("total-eclipse", "hsl(250 50% 4%)", "hsl(44 100% 76%)", "star", true, 0, "starburst"),
 };
 // ---------- quest fighters ----------
 // Parallax (space), Hexizon (indie games), Halflife (gamma), Redline (speed) and Liminal (portals and matter). Their signature moves have hand-drawn looks of their own

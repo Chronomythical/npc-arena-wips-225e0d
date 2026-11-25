@@ -1064,6 +1064,288 @@ function drawBossPhase(
       }
       break;
     }
+    // ----- The Riftmaker -----
+    case "riftmaker": {
+      if (!front) {
+        // 2: two mirror copies of its body swaying out at its sides
+        ctx.globalCompositeOperation = "lighter";
+        for (let k = 0; k < 2; k++) {
+          const dx = (k ? 1 : -1) * (24 + Math.sin(t * 1.7 + k * 2) * 6) * s;
+          const dy = Math.sin(t * 2.3 + k) * 3 * s;
+          ctx.strokeStyle = k ? "hsl(186 100% 70% / 0.32)" : "hsl(318 100% 70% / 0.32)";
+          ctx.lineWidth = 5 * s;
+          ctx.beginPath();
+          for (const seg of [[hip, neck], [hip, p.kF, p.fF], [hip, p.kB, p.fB], [shoulder, p.eF, p.hF], [shoulder, p.eB, p.hB]]) {
+            ctx.moveTo(seg[0].x + dx, seg[0].y + dy);
+            for (const q of seg.slice(1)) ctx.lineTo(q.x + dx, q.y + dy);
+          }
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(head.x + dx, head.y + dy, HEAD * s, 0, TAU);
+          ctx.stroke();
+        }
+        ctx.globalCompositeOperation = "source-over";
+      }
+      if (phase >= 3) {
+        if (!front) {
+          // 3: the tear opens into a ring of open space full of stars
+          const rx = mid.x + back * 6 * s, ry = mid.y - 10 * s, r = 62 * s;
+          ctx.fillStyle = "hsl(258 70% 7% / 0.9)";
+          ctx.beginPath();
+          ctx.arc(rx, ry, r, 0, TAU);
+          ctx.fill();
+          ctx.fillStyle = "white";
+          for (let i = 0; i < 18; i++) {
+            const an = i * 2.4 + t * 0.15, d = r * (0.15 + ((i * 0.37) % 0.8));
+            ctx.globalAlpha = 0.45 + 0.45 * Math.sin(t * 4 + i * 1.3);
+            ctx.fillRect(rx + Math.cos(an) * d, ry + Math.sin(an) * d, 1.7 * s, 1.7 * s);
+          }
+          ctx.globalAlpha = 1;
+          ctx.lineWidth = 3 * s;
+          ctx.setLineDash([16 * s, 9 * s]);
+          for (let i = 0; i < 2; i++) {
+            ctx.strokeStyle = i ? "hsl(186 100% 70% / 0.9)" : "hsl(318 100% 70% / 0.9)";
+            ctx.lineDashOffset = t * (i ? -60 : 60) * s;
+            ctx.beginPath();
+            ctx.arc(rx, ry, r - i * 4 * s, 0, TAU);
+            ctx.stroke();
+          }
+          ctx.setLineDash([]);
+        } else {
+          // and two more eyes open on its brow beside the third
+          for (const dx of [-5, 5]) {
+            const ex = head.x + face * 1 * s + dx * s, ey = head.y - 4.5 * s;
+            glow(ctx, ex, ey, 5 * s, "hsl(186 100% 80% / 0.9)", "hsl(186 100% 60% / 0)");
+            ctx.fillStyle = "hsl(0 0% 100%)";
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 1 * s;
+            ctx.beginPath();
+            ctx.ellipse(ex, ey, 2.4 * s, 1.5 * s, 0, 0, TAU);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = "hsl(186 100% 40%)";
+            ctx.beginPath();
+            ctx.arc(ex, ey, 0.9 * s, 0, TAU);
+            ctx.fill();
+          }
+        }
+      }
+      if (phase >= 4) {
+        if (!front) {
+          // 4: a turning cube of broken space framing it
+          const cx = mid.x, cy = mid.y - 8 * s, e = 52 * s;
+          const ay = t * 0.7, ax = 0.5 + Math.sin(t * 0.4) * 0.2;
+          const pts = [-1, 1].flatMap((x) => [-1, 1].flatMap((y) => [-1, 1].map((z) => {
+            const x1 = x * Math.cos(ay) - z * Math.sin(ay), z1 = x * Math.sin(ay) + z * Math.cos(ay);
+            const y1 = y * Math.cos(ax) - z1 * Math.sin(ax);
+            return { x: cx + x1 * e, y: cy + y1 * e };
+          })));
+          ctx.lineWidth = 2 * s;
+          for (let a = 0; a < 8; a++) {
+            for (const bit of [1, 2, 4]) {
+              const b = a ^ bit;
+              if (b < a) continue;
+              ctx.strokeStyle = bit === 2 ? "hsl(318 100% 72% / 0.85)" : "hsl(186 100% 72% / 0.85)";
+              ctx.beginPath();
+              ctx.moveTo(pts[a].x, pts[a].y);
+              ctx.lineTo(pts[b].x, pts[b].y);
+              ctx.stroke();
+            }
+          }
+        } else {
+          // and its body glitching into slices that slip sideways
+          const tick = Math.floor(t * 9);
+          ctx.globalCompositeOperation = "lighter";
+          for (let i = 0; i < 3; i++) {
+            const k = Math.abs(Math.sin(tick * 3.7 + i * 2.9));
+            const y = head.y - 12 * s + k * (p.fF.y - head.y + 12 * s);
+            const off = Math.sin(tick * 5.3 + i) * 10 * s;
+            ctx.fillStyle = i % 2 ? "hsl(186 100% 60% / 0.5)" : "hsl(318 100% 62% / 0.5)";
+            ctx.fillRect(mid.x - 22 * s + off, y, 44 * s, (2 + (i % 2) * 2) * s);
+          }
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      break;
+    }
+    // ----- The Hollow King -----
+    case "hollow": {
+      if (front) {
+        // 2: green soul fire running along the hem of its cloak
+        ctx.globalCompositeOperation = "lighter";
+        const hemY = hip.y + 44 * s;
+        for (let i = 0; i < 6; i++) {
+          const x = hip.x + back * (34 - i * 7) * s;
+          flame(ctx, x, hemY - (i % 2 ? 14 : 3) * s, 3.4 * s, (8 + Math.sin(t * 10 + i * 1.9) * 3) * s, "hsl(152 100% 66% / 0.8)");
+        }
+        ctx.globalCompositeOperation = "source-over";
+        // and a chain of small skulls hung from its belt
+        for (let i = 0; i < 4; i++) {
+          const u = (i + 0.5) / 4;
+          const x = hip.x - 10 * s + u * 20 * s, y = hip.y + (2 + Math.sin(u * Math.PI) * 6) * s + Math.sin(t * 3 + i) * 0.8 * s;
+          ctx.fillStyle = "hsl(44 30% 84%)";
+          ctx.strokeStyle = INK;
+          ctx.lineWidth = 1 * s;
+          ctx.beginPath();
+          ctx.arc(x, y, 2.8 * s, 0, TAU);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = "hsl(152 100% 50%)";
+          ctx.fillRect(x - 1.5 * s, y - 0.6 * s, 1 * s, 1 * s);
+          ctx.fillRect(x + 0.5 * s, y - 0.6 * s, 1 * s, 1 * s);
+        }
+      }
+      if (phase >= 3 && !front) {
+        // 3: two ghost knights of its fallen court, hooded wisps with soul eyes
+        for (const side of [-1, 1]) {
+          const gx = hip.x + side * 52 * s, gy = mid.y - 6 * s + Math.sin(t * 1.8 + side) * 4 * s;
+          const gr = ctx.createLinearGradient(0, gy - 30 * s, 0, gy + 44 * s);
+          gr.addColorStop(0, "hsl(152 60% 60% / 0.5)");
+          gr.addColorStop(1, "hsl(152 60% 40% / 0)");
+          ctx.fillStyle = gr;
+          ctx.beginPath();
+          ctx.moveTo(gx, gy - 30 * s);
+          ctx.quadraticCurveTo(gx + 16 * s, gy - 26 * s, gx + 15 * s, gy);
+          for (let i = 0; i <= 4; i++) ctx.lineTo(gx + (15 - i * 7.5) * s, gy + (i % 2 ? 36 : 44) * s + Math.sin(t * 4 + i) * 3 * s);
+          ctx.quadraticCurveTo(gx - 16 * s, gy - 26 * s, gx, gy - 30 * s);
+          ctx.fill();
+          ctx.strokeStyle = "hsl(152 80% 70% / 0.6)";
+          ctx.lineWidth = 1.2 * s;
+          ctx.stroke();
+          // a ghostly blade held upright
+          ctx.strokeStyle = "hsl(150 60% 80% / 0.55)";
+          ctx.lineWidth = 2.2 * s;
+          ctx.beginPath();
+          ctx.moveTo(gx - side * 12 * s, gy + 24 * s);
+          ctx.lineTo(gx - side * 12 * s, gy - 30 * s);
+          ctx.stroke();
+          ctx.globalCompositeOperation = "lighter";
+          for (const ex of [-3.5, 3.5]) glow(ctx, gx + ex * s, gy - 16 * s, 3 * s, "hsl(152 100% 80%)", "hsl(152 100% 60% / 0)");
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      if (phase >= 4) {
+        if (!front) {
+          // 4: wings of bone and torn shadow
+          const flap = Math.sin(t * 2) * 0.1;
+          for (const dir of [-1, 1]) {
+            const root = { x: shoulder.x + dir * 3 * s, y: shoulder.y + 2 * s };
+            const tips = [0, 1, 2, 3].map((j) => {
+              const an = -Math.PI / 2 + dir * (0.35 + j * 0.38 + flap);
+              const len = (84 - j * 12) * s;
+              return { x: root.x + Math.cos(an) * len, y: root.y + Math.sin(an) * len };
+            });
+            // the torn membrane between the bones
+            ctx.fillStyle = "hsl(170 40% 5% / 0.82)";
+            ctx.beginPath();
+            ctx.moveTo(root.x, root.y);
+            tips.forEach((tp, j) => {
+              ctx.lineTo(tp.x, tp.y);
+              if (j < tips.length - 1) {
+                const nx = tips[j + 1];
+                ctx.lineTo((tp.x + nx.x) / 2 + (root.x - (tp.x + nx.x) / 2) * 0.3, (tp.y + nx.y) / 2 + (root.y - (tp.y + nx.y) / 2) * 0.3 + Math.sin(t * 5 + j) * 2 * s);
+              }
+            });
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = "hsl(44 30% 82%)";
+            ctx.lineWidth = 2.2 * s;
+            for (const tp of tips) {
+              ctx.beginPath();
+              ctx.moveTo(root.x, root.y);
+              ctx.lineTo(tp.x, tp.y);
+              ctx.stroke();
+            }
+          }
+        } else {
+          // and a ring of soul fire burning over its crown
+          const cx = head.x - face * 1.5 * s, cy = head.y - 30 * s;
+          ctx.strokeStyle = "hsl(152 100% 66% / 0.8)";
+          ctx.lineWidth = 2 * s;
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, 16 * s, 4 * s, 0, 0, TAU);
+          ctx.stroke();
+          ctx.globalCompositeOperation = "lighter";
+          for (let i = 0; i < 8; i++) {
+            const an = t * 1.5 + (i / 8) * TAU;
+            flame(ctx, cx + Math.cos(an) * 16 * s, cy + Math.sin(an) * 4 * s, 2.6 * s, (6 + Math.sin(t * 11 + i) * 2) * s, "hsl(152 100% 70% / 0.85)");
+          }
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      break;
+    }
+    // ----- The Black Sun -----
+    case "blacksun": {
+      const cx = head.x - face * 7 * s, cy = head.y - 6 * s;
+      // 2: three sunspots broken off the disc, circling the body with a tail of fire
+      orbit(3, 48, 14, mid.y, 1.8, (x, y, i) => {
+        ctx.globalCompositeOperation = "lighter";
+        glow(ctx, x, y, 12 * s, "hsl(36 100% 60% / 0.8)", "hsl(24 100% 50% / 0)");
+        ctx.globalCompositeOperation = "source-over";
+        ctx.fillStyle = "hsl(250 40% 6%)";
+        ctx.strokeStyle = "hsl(44 100% 70%)";
+        ctx.lineWidth = 1.4 * s;
+        ctx.beginPath();
+        ctx.arc(x, y, (4.5 + (i % 2)) * s, 0, TAU);
+        ctx.fill();
+        ctx.stroke();
+      });
+      if (phase >= 3 && !front) {
+        // 3: a ring of black flame round the dead sun, a diamond of light running round its edge
+        ctx.fillStyle = "hsl(250 40% 5% / 0.92)";
+        for (let i = 0; i < 16; i++) {
+          const an = (i / 16) * TAU - t * 0.7;
+          const len = (40 + 8 * Math.sin(t * 6 + i * 1.7)) * s;
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(an - 0.14) * 30 * s, cy + Math.sin(an - 0.14) * 30 * s);
+          ctx.quadraticCurveTo(cx + Math.cos(an + 0.1) * len * 0.85, cy + Math.sin(an + 0.1) * len * 0.85, cx + Math.cos(an) * len, cy + Math.sin(an) * len);
+          ctx.lineTo(cx + Math.cos(an + 0.14) * 30 * s, cy + Math.sin(an + 0.14) * 30 * s);
+          ctx.fill();
+        }
+        ctx.strokeStyle = "hsl(44 100% 72% / 0.9)";
+        ctx.lineWidth = 1.6 * s;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 30 * s, 0, TAU);
+        ctx.stroke();
+        const dn = t * 1.3;
+        const dx = cx + Math.cos(dn) * 30 * s, dy = cy + Math.sin(dn) * 30 * s;
+        ctx.globalCompositeOperation = "lighter";
+        glow(ctx, dx, dy, 14 * s, "hsl(0 0% 100%)", "hsl(44 100% 70% / 0)");
+        ctx.strokeStyle = "hsl(0 0% 100% / 0.9)";
+        ctx.lineWidth = 1.4 * s;
+        ctx.beginPath();
+        ctx.moveTo(dx - 12 * s, dy); ctx.lineTo(dx + 12 * s, dy);
+        ctx.moveTo(dx, dy - 12 * s); ctx.lineTo(dx, dy + 12 * s);
+        ctx.stroke();
+        ctx.globalCompositeOperation = "source-over";
+      }
+      if (phase >= 4) {
+        if (!front) {
+          // 4: a white-hot blaze behind the cracked sun
+          ctx.globalCompositeOperation = "lighter";
+          glow(ctx, cx, cy, (82 + Math.sin(t * 7) * 5) * s, "hsl(48 100% 92% / 0.75)", "hsl(36 100% 60% / 0)");
+          ctx.globalCompositeOperation = "source-over";
+        } else {
+          // and the dead sun cracking open, white fire pouring out along its top edge
+          ctx.globalCompositeOperation = "lighter";
+          ctx.strokeStyle = `hsl(0 0% 100% / ${0.75 + 0.2 * Math.sin(t * 9)})`;
+          ctx.lineWidth = 2.6 * s;
+          ctx.beginPath();
+          ctx.arc(cx, cy, 23.5 * s, Math.PI * 1.05, Math.PI * 1.95);
+          ctx.stroke();
+          ctx.lineWidth = 1.8 * s;
+          for (let i = 0; i < 5; i++) {
+            const an = Math.PI * (1.12 + i * 0.19);
+            jagLine(ctx, [{ x: cx + Math.cos(an) * 15 * s, y: cy + Math.sin(an) * 15 * s }, { x: cx + Math.cos(an) * 24 * s, y: cy + Math.sin(an) * 24 * s }, { x: cx + Math.cos(an + 0.05) * (34 + Math.sin(t * 8 + i) * 4) * s, y: cy + Math.sin(an + 0.05) * (34 + Math.sin(t * 8 + i) * 4) * s }], 4, i + 1);
+          }
+          // its fists burning white
+          for (const h of [p.hF, p.hB]) flame(ctx, h.x, h.y + 2 * s, 4.5 * s, (13 + Math.sin(t * 12 + h.x) * 3) * s, "hsl(48 100% 90% / 0.9)");
+          ctx.globalCompositeOperation = "source-over";
+        }
+      }
+      break;
+    }
   }
   ctx.restore();
 }

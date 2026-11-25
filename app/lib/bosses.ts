@@ -118,7 +118,7 @@ export const BOSSES: Record<BossId, FighterDef> = {
 // Each boss breaks into a 2nd, 3rd and 4th phase as its health runs down (75%, 50%, 25%). A phase is a form
 // (forms.ts, kind "phase"): the fight pauses for its cutscene, the boss is recoloured and stronger, and 2 new
 // moves join the ones it already has, so by its 4th phase a boss fights with 12. Its look grows with each
-// phase (drawBossPhase in boss-designs.ts). Chapters 5 to 7 are still to come.
+// phase (drawBossPhase in boss-designs.ts).
 const P2 = { kind: "phase" as const, step: 2, at: 0.75, dmg: 1.12, kb: 1.08, cd: 0.88, speed: 1.05, act: 1.05 };
 const P3 = { kind: "phase" as const, step: 3, at: 0.5, dmg: 1.24, kb: 1.15, cd: 0.78, speed: 1.1, act: 1.1 };
 const P4 = { kind: "phase" as const, step: 4, at: 0.25, dmg: 1.38, kb: 1.25, cd: 0.68, speed: 1.18, act: 1.18 };
@@ -237,6 +237,93 @@ export const BOSS_PHASES: Partial<Record<BossDesign, Form[]>> = {
       moves: [
         M({ id: "eternal-stop", name: "Eternal Stop", kind: "burst", anim: "raise", range: 2000, cd: 15, dmg: 10, radius: 60, world: true, status: "freeze", statusDur: 2.4, wind: 0.55, rec: 0.2 }),
         M({ id: "absolute-winter", name: "Absolute Winter", kind: "zone", anim: "slam", range: 400, cd: 9, dmg: 7, radius: 190, dur: 5, pullIn: 120, status: "slow", statusDur: 0.8, wind: 0.36 }),
+      ],
+    },
+  ],
+  riftmaker: [
+    {
+      ...P2, power: "psy", title: "FRACTURED SELF", dodge: 0.15,
+      blurb: "Two mirror copies split off it and sway at its sides. It slips some hits, and its mirror shards fly in a wide fan.",
+      body: "hsl(262 36% 18%)", glow: "hsl(318 100% 76%)", a: "hsl(318 90% 58%)", b: "hsl(186 100% 80%)",
+      moves: [
+        M({ id: "kaleidoscope", name: "Kaleidoscope", kind: "projectile", anim: "cast", range: 600, minRange: 80, cd: 3.4, dmg: 5, speed: 620, size: 9, count: 6, spread: 0.3, shape: "shard", status: "blind", statusDur: 0.5 }),
+        M({ id: "mirror-step", name: "Mirror Step", kind: "blink", anim: "kick", range: 500, minRange: 120, cd: 4, dmg: 12, kb: 280, status: "blind", statusDur: 0.5 }),
+      ],
+    },
+    {
+      ...P3, power: "psy", title: "TORN SKY", drain: 0.12,
+      blurb: "The tear behind it opens into a ring of open space full of stars, and two more eyes open on its brow. Stars fall through the ring, and every hit it lands takes a little health back.",
+      body: "hsl(250 50% 10%)", glow: "hsl(186 100% 80%)", a: "hsl(252 70% 30%)", b: "hsl(318 100% 80%)",
+      moves: [
+        M({ id: "gravity-fold", name: "Gravity Fold", kind: "pull", anim: "cast", range: 480, minRange: 110, cd: 4.5, dmg: 10, status: "blind", statusDur: 0.6, wind: 0.24 }),
+        M({ id: "falling-sky", name: "Falling Sky", kind: "rain", anim: "raise", range: 560, cd: 6, dmg: 8, count: 8, radius: 190, size: 11, shape: "shard", wind: 0.36, rec: 0.3 }),
+      ],
+    },
+    {
+      ...P4, power: "psy", title: "THE UNWRITTEN", guard: 0.8, regen: 1.2,
+      blurb: "Reality stops holding it together: its body glitches into slices and a turning cube of broken space frames it. Rewrite blasts most of the arena.",
+      body: "hsl(0 0% 96%)", glow: "hsl(318 100% 70%)", a: "hsl(186 100% 56%)", b: "hsl(318 100% 72%)", dark: "hsl(262 70% 6%)",
+      moves: [
+        M({ id: "rewrite", name: "Rewrite", kind: "burst", anim: "raise", range: 480, cd: 12, dmg: 15, radius: 430, kb: 420, lift: -400, status: "blind", statusDur: 1.2, wind: 0.55, rec: 0.35 }),
+        M({ id: "infinite-mirror", name: "Infinite Mirror", kind: "beam", anim: "cast", range: 640, minRange: 60, cd: 4, dmg: 18, act: 0.4, kb: 300, status: "blind", statusDur: 0.6, wind: 0.36 }),
+      ],
+    },
+  ],
+  hollow: [
+    {
+      ...P2, power: "umbra", title: "SOUL FEAST", drain: 0.1,
+      blurb: "Green soul fire runs along the hem of its cloak and a chain of skulls hangs from its belt. It hurls its scythe, and every hit feeds it.",
+      body: "hsl(168 18% 14%)", glow: "hsl(152 100% 68%)", a: "hsl(160 40% 18%)", b: "hsl(152 100% 72%)",
+      moves: [
+        M({ id: "reaver-throw", name: "Reaver Throw", kind: "projectile", anim: "spin", range: 600, minRange: 90, cd: 3.4, dmg: 11, speed: 520, size: 16, pierce: true, shape: "blade" }),
+        M({ id: "ghost-march", name: "Ghost March", kind: "dash", anim: "lunge", range: 380, cd: 4, dmg: 12, dist: 380, act: 0.24, kb: 300, status: "slow", statusDur: 1 }),
+      ],
+    },
+    {
+      ...P3, power: "umbra", title: "THE DEAD COURT", guard: 0.85,
+      blurb: "Two ghost knights of its fallen court rise at its sides. Bone Spires burst up through the floor in a row, and Banshee Wail blinds everyone near it.",
+      body: "hsl(170 22% 10%)", glow: "hsl(140 90% 70%)", a: "hsl(44 30% 82%)", b: "hsl(152 100% 66%)",
+      moves: [
+        M({ id: "bone-spires", name: "Bone Spires", kind: "eruption", anim: "slam", range: 600, minRange: 40, cd: 6, dmg: 11, radius: 42, count: 5, lift: -560, status: "stun", statusDur: 0.3, wind: 0.36 }),
+        M({ id: "banshee-wail", name: "Banshee Wail", kind: "burst", anim: "raise", range: 160, cd: 7, dmg: 12, radius: 200, kb: 360, lift: -240, status: "blind", statusDur: 1.4, wind: 0.34, rec: 0.36 }),
+      ],
+    },
+    {
+      ...P4, power: "umbra", title: "DEATH ITSELF", guard: 0.8, drain: 0.15,
+      blurb: "Wings of bone and torn shadow open behind it and a ring of soul fire burns over its crown. Final Harvest reaps every enemy at once, and Requiem feeds it while they stand in it.",
+      body: "hsl(160 30% 6%)", glow: "hsl(152 100% 74%)", a: "hsl(165 40% 10%)", b: "hsl(150 100% 76%)", dark: "hsl(170 40% 3%)",
+      moves: [
+        M({ id: "final-harvest", name: "Final Harvest", kind: "burst", anim: "raise", range: 2000, cd: 14, dmg: 13, heal: 9, harvest: true, wind: 0.55, rec: 0.3 }),
+        M({ id: "requiem", name: "Requiem", kind: "zone", anim: "slam", range: 420, cd: 10, dmg: 7, radius: 190, dur: 5, pullIn: 160, heal: 3, status: "slow", statusDur: 0.6, wind: 0.4 }),
+      ],
+    },
+  ],
+  blacksun: [
+    {
+      ...P2, power: "lux", title: "CORONA STORM",
+      blurb: "Three sunspots break off its disc and circle its body. It fires them in volleys and charges in a trail of fire.",
+      body: "hsl(26 40% 14%)", glow: "hsl(40 100% 66%)", a: "hsl(24 100% 50%)", b: "hsl(48 100% 74%)",
+      moves: [
+        M({ id: "sunspot-volley", name: "Sunspot Volley", kind: "projectile", anim: "thrust", range: 580, minRange: 80, cd: 3, dmg: 5, speed: 560, size: 10, count: 5, spread: 0.26, shape: "orb", status: "burn", statusDur: 1.2 }),
+        M({ id: "sunrush", name: "Sunrush", kind: "dash", anim: "lunge", range: 400, cd: 3.8, dmg: 13, dist: 400, act: 0.24, kb: 320, lift: -200, status: "burn", statusDur: 1.5 }),
+      ],
+    },
+    {
+      ...P3, power: "lux", title: "PENUMBRA", dodge: 0.15,
+      blurb: "A ring of black flame circles the dead sun with a diamond of light running round its edge. Its rays turn dark and blind, and it slips some hits in the shade.",
+      body: "hsl(250 30% 8%)", glow: "hsl(44 100% 70%)", a: "hsl(250 40% 10%)", b: "hsl(44 100% 72%)", dark: "hsl(250 40% 4%)",
+      moves: [
+        M({ id: "umbral-ray", name: "Umbral Ray", kind: "beam", anim: "cast", range: 560, minRange: 70, cd: 3.8, dmg: 16, act: 0.36, status: "blind", statusDur: 0.8, wind: 0.32 }),
+        M({ id: "shadow-flare", name: "Shadow Flare", kind: "eruption", anim: "slam", range: 540, minRange: 50, cd: 5.5, dmg: 12, radius: 48, count: 3, lift: -620, status: "blind", statusDur: 0.6, wind: 0.36 }),
+      ],
+    },
+    {
+      ...P4, power: "lux", title: "SUPERNOVA", guard: 0.75, regen: 1.2,
+      blurb: "The dead sun cracks open and white fire pours out of it, and its fists burn white. Supernova blasts most of the arena, and Endless Night blacks out the sky and leaves its enemies blind longer than Total Eclipse.",
+      body: "hsl(40 100% 86%)", glow: "hsl(0 0% 100%)", a: "hsl(36 100% 56%)", b: "hsl(0 0% 100%)",
+      moves: [
+        M({ id: "supernova", name: "Supernova", kind: "burst", anim: "raise", range: 460, cd: 12, dmg: 15, radius: 440, kb: 420, lift: -480, status: "burn", statusDur: 3, wind: 0.55, rec: 0.35 }),
+        M({ id: "endless-night", name: "Endless Night", kind: "burst", anim: "raise", range: 2000, cd: 15, dmg: 9, eclipse: true, status: "blind", statusDur: 4.5, wind: 0.55, rec: 0.3 }),
       ],
     },
   ],
